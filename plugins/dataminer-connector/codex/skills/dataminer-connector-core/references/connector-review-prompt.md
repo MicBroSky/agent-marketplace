@@ -7,7 +7,7 @@ Modeled after the SLC-AI-Playbook architect review prompt.
 
 ## How to Use
 
-After completing a connector development task, paste this prompt into a new message (or invoke the `dataminer-reviewer` agent):
+After completing a connector development task, paste this prompt into a new message (or invoke the `dataminer-connector-reviewer` agent):
 
 ### Review profile selection
 
@@ -82,8 +82,9 @@ Do not claim PASS or READY when required runtime, human, administrative, vendor,
 
 - [ ] All 10 required metadata tags are present (Name, Description, Version, IntegrationID, Provider, Vendor, VendorOID, DeviceOID, ElementType, VersionHistory)
 - [ ] `protocol.xml` contains no explanatory, documentation, TODO, FIXME, debug, workaround, or design-note comments; copyright comments and justified `SuppressValidator` wrappers are the only permitted XML comment exceptions
-- [ ] `VendorOID` is a Skyline-assigned connector OID matching `1.3.6.1.4.1.8813.2.<number>`
-- [ ] `DeviceOID` is a single integer, not a dotted OID
+- [ ] `VendorOID` is a Skyline-assigned connector OID matching `1.3.6.1.4.1.8813.2.<number>` or default `1.3.6.1.4.1.8813.2.XX`
+- [ ] `DeviceOID` is a single integer or default `XX`, not a dotted OID
+- [ ] `IntegrationID` matches `DMS-DRV-NNNN` or default `DMS-DRV-XXXX`
 - [ ] Every parameter has `<Information><Subtext>` with a meaningful operator-facing description without technical protocol details (such as SNMP OIDs)
 - [ ] Only parameters intended to support alarming have an `<Alarm>` block; every present block starts with an explicit valid `<Monitored>true|false</Monitored>` value
 - [ ] Alarm threshold abbreviations are used: `CH`, `MaH`, `MiH`, `WaH`, `Normal`, `WaL`, `MiL`, `MaL`, `CL`
@@ -111,6 +112,7 @@ Do not claim PASS or READY when required runtime, human, administrative, vendor,
 
 ## QAction C# Code
 
+- [ ] Every QAction `.csproj` targets `.NET Framework 4.8` (`<TargetFramework>net48</TargetFramework>`) and **C# 7.3** (no `<LangVersion>` > `7.3`, no `<Nullable>enable</Nullable>`), and all QAction `.cs` files use strictly C# 7.3 syntax (no C# 8/9+ target-typed `new()`, file-scoped namespaces, `record`, `init`, switch expressions, `is not null`, `using var`, or `??=`)
 - [ ] Every `Run` entry point has a `try/catch(Exception ex)` wrapper
 - [ ] All logging uses `ex.ToString()` — not `ex.Message`
 - [ ] Log format is `QA{protocol.QActionID}|MethodName|message`

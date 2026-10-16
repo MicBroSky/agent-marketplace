@@ -1,15 +1,15 @@
 {
-  "manifestVersion": "0.1.0",
+  "manifestVersion": "0.1.1",
   "marketplace": "skyline-agent-marketplace",
   "sourceRepository": "SkylineCommunications/.github-private",
-  "sourceCommitSha": "b37f7a3a1049e154edfc5687ea49c47d9808033f",
-  "builtAtUtc": "2026-10-06T12:58:05.1256906+00:00",
+  "sourceCommitSha": "962e8cabf52151196fd85beb55cd6e8be31a6bff",
+  "builtAtUtc": "2026-10-16T17:08:26.0215275+00:00",
   "publisherToolVersion": "1.0.0.0",
   "plugins": [
     {
-      "id": "dataminer-app-builder",
+      "id": "dataminer-apps",
       "version": "0.1.0",
-      "path": "plugins/dataminer-app-builder",
+      "path": "plugins/dataminer-apps",
       "rootAgents": [
         "dataminer-app-builder"
       ],
@@ -28,26 +28,27 @@
         "dataminer-headless-ias",
         "dataminer-debug-issues"
       ],
-      "instructions": null
+      "instructions": null,
+      "fingerprint": "6d324014b8d563980dd6b086774e76cbec9e41a3a671d49ec61f1ecfc5412ee2"
     },
     {
       "id": "dataminer-connector",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "path": "plugins/dataminer-connector",
       "rootAgents": [
         "dataminer-connector-orchestrator"
       ],
       "agents": [
         "dataminer-connector-orchestrator",
-        "dataminer-scaffolder",
-        "dataminer-xml-author",
-        "dataminer-qaction-writer",
-        "dataminer-validator",
-        "dataminer-reviewer",
-        "dataminer-test-writer",
-        "dataminer-investigator",
-        "dataminer-help-writer",
-        "dataminer-simulation-generator"
+        "dataminer-connector-scaffolder",
+        "dataminer-connector-xml-author",
+        "dataminer-connector-qaction-writer",
+        "dataminer-connector-validator",
+        "dataminer-connector-reviewer",
+        "dataminer-connector-test-writer",
+        "dataminer-connector-investigator",
+        "dataminer-connector-help-writer",
+        "dataminer-connector-simulation-generator"
       ],
       "skills": [
         "dataminer-connector-core",
@@ -60,7 +61,7 @@
         "dataminer-logging",
         "dataminer-manifest",
         "dataminer-nugets",
-        "dataminer-orchestrator",
+        "dataminer-connector-orchestrator",
         "dataminer-protocol-validator-prevention",
         "dataminer-protocol-xml-reference",
         "dataminer-qaction",
@@ -91,7 +92,8 @@
           "file": "dataminer-qaction.instructions.md",
           "skill": "dataminer-qaction"
         }
-      ]
+      ],
+      "fingerprint": "5565c59b9924bfc1fe7291f96e2a29d292902a0206fd1aca52981c5c9354398b"
     }
   ]
 }

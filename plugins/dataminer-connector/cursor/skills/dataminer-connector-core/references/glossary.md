@@ -105,8 +105,14 @@ A batch of same-type items (parameters, pairs, sessions, actions, triggers) that
 - `action` — executes a list of actions (no device communication)
 - `trigger` — fires a list of triggers
 
+*Group attributes:*
+- `ping="true"` — marks the group as the connection test group. When operators enter an IP address in the Element Creation or Update Wizard, clicking the "Test connection" button executes this group to verify connectivity before creating or updating the element. Without this attribute, the "Test connection" button is disabled.
+- `connection` — directs the group to a specific connection (0 = main, 1 = first advanced, etc.).
+
 **Timer**
-A background thread that runs every N milliseconds and adds groups to the execution queue. Timers contain references to groups. NEVER put the same group in multiple timers — it causes duplicate polling.
+A background thread that periodically adds groups to the execution queue. Timers contain references to groups. NEVER put the same group in multiple timers — it causes duplicate polling.
+- `<Time>`: The timer cycle frequency / execution period (in ms). Defines how frequently the timer fires and enqueues its groups (e.g. `10000` = every 10 seconds).
+- `<Interval>` (`Timer.Interval`): The inter-group spacing delay (in ms) between consecutive groups within the same timer cycle, as well as between consecutive pairs within a group (default `75` ms). Increasing `Timer.Interval` is the standard mechanism to pace/throttle requests across a polling cycle to prevent overloading devices or HTTP APIs without reducing polling frequency.
 
 **Trigger**
 An event handler: WHEN `<On>` something happens → WHAT `<Type>` to do (execute one or more actions). Triggers are the reactive logic layer.
@@ -132,6 +138,12 @@ A serial `<Command>` + `<Response>` matched together. Used only in serial/smart-
 
 **Session**
 An HTTP session (XML `<Session>` inside `<HTTP>`). Contains one or more `<Connection>` elements, each with a `<Request>` and `<Response>`. The `statusCode` attribute on `<Response>` is the **parameter ID** that receives the HTTP status line (e.g., "HTTP/1.1 200 OK").
+
+**HTTP Status Codes (in DataMiner)**
+Response status codes received from HTTP endpoints, plus DataMiner synthetic codes:
+- `1XX` (Informational) & `2XX` (Success): Processed normally; do not contribute to Element Timeout.
+- `3XX` (Redirection): Auto-redirects when a `Location` header is present; does not always contribute to Element Timeout.
+- `4XX` (Client Errors), `5XX` (Server Errors), and `6XX` (System Errors): The 3 status code classes that **always contribute to an Element Timeout**. In DataMiner, underlying transport and WINHTTP communication failures (connection failed, SSL/TLS handshake errors, socket aborts, etc.) are categorized as **6XX System Errors**.
 
 ---
 

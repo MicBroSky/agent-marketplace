@@ -9,7 +9,7 @@
   "selectionPolicy": {
     "targetVersions": "Resolve the target DataMiner, Dev Pack, and related package versions for each task. An observed latest version is a maintenance signal, not an automatic authoring default.",
     "schemaAuthority": "Use only the generated local references during connector work. Updating an upstream pin does not authorize newer schema content until the references are regenerated and validated.",
-    "vendorOid": "Use the VendorOID supplied in the user prompt. If it is absent, ask the user. Never invent a VendorOID, and validate the supplied value against the selected target schema."
+    "vendorOid": "Use the VendorOID supplied in the user prompt. If it is absent, default to 1.3.6.1.4.1.8813.2.XX (with DeviceOID XX and IntegrationID DMS-DRV-XXXX). Validate any supplied value against the selected target schema."
   },
   "localBaseline": {
     "previousSchemaPackage": {

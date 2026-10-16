@@ -1,13 +1,29 @@
 ---
-description: "Guard rails for DataMiner connector QAction C# code. Prevents hallucinated SLProtocol methods, namespace errors, and common C# anti-patterns."
+description: "Guard rails for DataMiner connector QAction C# code. Enforces .NET Framework 4.8 (net48), C# 7.3, zero-error compilation, and prevents hallucinated SLProtocol methods, namespace errors, and common C# anti-patterns."
 applyTo: "**/QAction_*.cs"
-version: "1.5"
-updated: "2026-09-14"
+version: "1.6"
+updated: "2026-10-16"
 ---
 
 # DataMiner QAction C# — Guard Rails
 
 > For comprehensive QAction patterns, load the `dataminer-qaction` skill and `dataminer-qaction/references/example-json-table.md`.
+
+## Target Framework, Language Version & Compilation Gate (CRITICAL)
+
+- **For DataMiner connector QActions, ALWAYS target `.NET Framework 4.8` (`<TargetFramework>net48</TargetFramework>`) and `C# 7.3` (`<LangVersion>7.3</LangVersion>`).**
+- **NEVER set `<LangVersion>` higher than `7.3` (such as `8.0`, `9.0`, `10.0`, `latest`, or `preview`) or change `<TargetFramework>` away from `net48` in `QAction_*.csproj` or `Directory.Build.props`.** DataMiner's `SLScripting` runtime and the CICD Validator (`[Critical][3.4.1] CompilationFailure`, `[Warning][3.4.3] NoCSharpCodeAnalysisPerformed`) compile QActions using C# 7.3 on .NET Framework 4.8.
+- **NEVER use C# 8.0, C# 9.0, or newer language features in QActions** (causes compiler error `CS8370`):
+  - ❌ Target-typed `new(...)` (`List<string> items = new();`) → ✅ `var items = new List<string>();` or `List<string> items = new List<string>();`
+  - ❌ File-scoped namespaces (`namespace MyConnector.Common;`) → ✅ Block-scoped `namespace MyConnector.Common { ... }`
+  - ❌ `record` types or `init` accessors (`public string Id { get; init; }`) → ✅ Standard `class` with `{ get; set; }`
+  - ❌ Switch expressions (`status switch { "OK" => 1, _ => 0 }`) → ✅ Traditional `switch (status)` statement
+  - ❌ C# 9 pattern combinators (`is not null`, `is > 0 and < 10`) → ✅ `!= null`, `> 0 && < 10`
+  - ❌ `using var` declarations without braces → ✅ `using (var stream = ...)` block
+  - ❌ Null-coalescing assignment (`list ??= new List<string>();`) → ✅ `if (list == null) { list = new List<string>(); }`
+  - ❌ Nullable reference types (`string?`, `<Nullable>enable</Nullable>`, `#nullable enable`, null-forgiving `!.`) → ✅ Standard C# 7.3 reference types without `<Nullable>`
+  - ❌ Index/range operators (`items[^1]`, `items[1..3]`), static local functions (`static void Helper()`), or default interface methods
+- **HARD COMPILATION GATE — Only fully compiling code (`dotnet build` passing with 0 errors) may ever be returned to the user or committed/pushed to a PR.** Always run `dotnet build` after any QAction edit and resolve every compilation error before finishing.
 
 ## Entry Point Rules
 

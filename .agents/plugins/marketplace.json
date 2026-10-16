@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "dataminer-app-builder",
+      "name": "dataminer-apps",
       "source": {
         "source": "local",
-        "path": "./plugins/dataminer-app-builder/codex"
+        "path": "./plugins/dataminer-apps/codex"
       },
       "policy": {
         "installation": "AVAILABLE",

@@ -1,6 +1,6 @@
 # Connector Review Checklist — Additional Quality Domains
 
-Extracted from `agents/dataminer-reviewer.agent.md` Step 4. The reviewer agent loads this reference and walks every domain. Use it as a finite checklist — do not skip domains because nothing obvious is wrong.
+Extracted from `agents/dataminer-connector-reviewer.agent.md` Step 4. The reviewer agent loads this reference and walks every domain. Use it as a finite checklist — do not skip domains because nothing obvious is wrong.
 
 Findings discovered through this checklist should be reported with severity (Critical/Major/Minor/Info) and a concrete suggested fix, following the reviewer agent's Output Format.
 

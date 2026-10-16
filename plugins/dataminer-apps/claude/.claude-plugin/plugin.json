@@ -1,0 +1,18 @@
+{
+  "skills": "./skills/",
+  "name": "dataminer-apps",
+  "version": "0.1.0",
+  "description": "Build static frontend applications for deployment inside Skyline DataMiner.",
+  "author": {
+    "name": "Skyline Communications",
+    "url": "https://github.com/SkylineCommunications"
+  },
+  "homepage": "https://github.com/SkylineCommunications/agent-marketplace",
+  "repository": "https://github.com/SkylineCommunications/agent-marketplace",
+  "keywords": [
+    "dataminer",
+    "web-apps",
+    "frontend"
+  ],
+  "license": "LicenseRef-Skyline-Agent-Marketplace"
+}

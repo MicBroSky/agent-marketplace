@@ -4,8 +4,8 @@ description: 'Unit testing for DataMiner connector QActions using SLProtocolMock
 argument-hint: 'Describe what to test: e.g. "write tests for QAction 100 JSON parsing", "set up test project for my connector"'
 license: LicenseRef-Skyline-Agent-Marketplace
 metadata:
-  updated: 2026-10-02
-  version: 1.5
+  updated: 2026-10-07
+  version: 1.6
 ---
 
 > **Skill reference notice:** This skill refers to additional skills that are not included in this distribution: `dataminer-automation-unit-testing`. If the task needs one, report the missing prerequisite and obtain it or explicitly narrow the task; do not claim the unsupported route is complete.
@@ -15,6 +15,7 @@ metadata:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.6 | 2026-10-07 | Updated paired agent reference to dataminer-connector-test-writer. |
 | 1.5 | 2026-10-02 | Corrected the package ID to `Skyline.DataMiner.Utils.UnitTestingFramework.Protocol` and documented its GitHub Packages source, version pinning, `extern alias` for several QActions, the optional `protocol.xml` path, and the CI NuGet-source caveat. |
 | 1.4 | 2026-09-14 | Added helper-free SLProtocolMock setup and made generated helper references conditional. |
 | 1.3 | 2026-06-10 | Added scope boundary: real DataMiner/QAOps integration tests route to `dataminer-qaops-integration-testing`. |
@@ -26,7 +27,7 @@ Covers writing unit tests for QActions using the `Skyline.DataMiner.Utils.UnitTe
 
 > **Scope boundary**: this skill is for **local, mocked connector QAction** tests only, and the `.Protocol` package mocks `SLProtocol`, so it applies to connectors and nothing else. For **Automation scripts** (mocked `IEngine` with Moq) load `dataminer-automation-unit-testing`. There is no unit-test framework for solutions or packages: validate them and test them on a real DataMiner. For tests that must run on a **real DataMiner** — Automation script behavior, element/service state, end-to-end regression tests, anything QAOps — load `dataminer-qaops` and `dataminer-qaops-integration-testing` instead. SLProtocolMock cannot test Automation scripts or live elements.
 
-> **Paired agent**: `dataminer-test-writer` — owns workflow, test coverage strategy, and output format. This skill owns SLProtocolMock API, test patterns, and assertion examples. Keep shared concepts (Arrange/Act/Assert, mock setup) in sync.
+> **Paired agent**: `dataminer-connector-test-writer` — owns workflow, test coverage strategy, and output format. This skill owns SLProtocolMock API, test patterns, and assertion examples. Keep shared concepts (Arrange/Act/Assert, mock setup) in sync.
 
 ## Reference Files
 

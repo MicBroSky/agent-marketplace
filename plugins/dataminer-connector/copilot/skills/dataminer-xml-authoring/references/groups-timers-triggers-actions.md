@@ -47,6 +47,24 @@ Groups define what to poll together in a single communication cycle.
 - Count the direct `<Param>` references in each SNMP group after writing it. If one cadence has 11 scalar reads, split it into a group of 10 and a singleton group; only the group of 10 uses `multipleGet="true"`.
 - Use the `connection` attribute on Groups to direct traffic to a specific connection (main = `0`, first advanced = `1`, etc.).
 
+### Connection Testing in the Element Wizard (Group @ping="true")
+
+In DataMiner Cube, operators creating or updating an element can test the entered IP address and communication settings **before finalizing element creation** by clicking the **Test connection** button in the wizard.
+
+- To enable this requirement in an HTTP (or other) connector, set the attribute `ping="true"` on the polling group to be executed during testing:
+  ```xml
+  <Group id="10" ping="true">
+    <Name>Test Connection</Name>
+    <Type>poll</Type>
+    <Content>
+      <Session>10</Session>
+    </Content>
+  </Group>
+  ```
+- When the operator clicks **Test connection**, DataMiner executes this designated group against the entered IP address. If it receives a valid response, "Connection successful" is displayed. If it times out or fails, the test reports an error.
+- If no group has `ping="true"`, the **Test connection** button in the Element Wizard is disabled.
+- **Do not confuse with Slow Poll recovery**: `Group@ping="true"` is for Element Wizard pre-creation testing. Slow poll timeout recovery for running elements uses `Group id="-1"` (HTTP) or the first defined polling group (SNMP).
+
 ### Ping Group (Slow Poll / Timeout Recovery)
 
 When an element enters timeout, DataMiner activates **slow poll mode**: normal polling stops and only a ping command is sent at regular intervals. When the device responds, normal polling resumes.
@@ -124,8 +142,8 @@ Timers schedule when groups are polled.
 </Timers>
 ```
 
-- `<Time>` is in milliseconds. `initial="true"` causes polling immediately on startup.
-- `<Interval>` is the spacing (ms) between groups within the same timer cycle.
+- `<Time>` is the polling cycle time in milliseconds. `initial="true"` causes polling immediately on startup.
+- `<Interval>` (`Timer.Interval`) is the spacing delay (ms) between consecutive groups within the same timer cycle, as well as between consecutive pairs within a group. Default is 75 ms.
 - Timer threads start during element initialization, so recurring poll groups are scheduled by their timers; do not also enqueue those groups from after-startup logic (the after-startup chain can still be used for one-time initialization). Use `initial="true"` when the first poll must happen immediately.
 
 ### Timer Design Rules
@@ -138,8 +156,9 @@ Timers schedule when groups are polled.
   Rapidly polling static asset data wastes network bandwidth and device/DataMiner CPU.
 - Default timer speeds: alarm/status = **10s**, config = **1min** (`dataDisplay` = 30000), static = **1hr**.
 - Default interval: **75 ms**.
-- Timer interval must allow **all groups to complete** before the timer triggers again.
-- Timer interval cannot exceed **24 hours**. Set timer time cannot exceed **24 days**.
+- The timer cycle time (`<Time>`) must allow **all groups and inter-group `<Interval>` delays to complete** before the timer triggers again.
+- The timer cycle time (`<Time>`) cannot exceed **24 hours** for SLWatchdog registration. Set timer time cannot exceed **24 days**.
+- **Rate limiting and request pacing**: To prevent overloading an external device or HTTP API with request bursts when reducing polling frequency (`<Time>`) is not an option, **increase `<Interval>` (`Timer.Interval`)** to space out group executions across the cycle. Do not reduce the number of groups (which removes inter-group spacing delays and intensifies bursts).
 - **Favor conditions over starting/stopping timers**. Condition on group > condition on timer.
 - If a timer contains poll groups, the **last group** must also be a poll group.
 - Timers with only non-poll groups: **disabled by default**, started from after-startup logic.

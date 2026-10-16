@@ -30,17 +30,34 @@ Prefer queued poll groups unless explicit parallel timer-thread execution is nee
 
 ## Timer Behavior
 
-Timers define which groups are scheduled and how often scheduling is attempted.
+Timers define which groups are scheduled and how often scheduling is attempted. In DataMiner, `<Timer>` has two distinct timing elements:
 
+- **`<Time>` (Polling Cycle / Period)**: Specifies how frequently the timer fires (in ms) to add its groups to the queue (e.g. 10000 = every 10 seconds). This dictates the polling frequency.
+- **`<Interval>` (`Timer.Interval`) (Inter-Group Spacing Delay)**: Specifies the delay (in ms) between consecutive groups within the same timer cycle, as well as between consecutive pairs within a group. Default is 75 ms.
+
+Key behavior:
 - Every timer creates a timer thread.
-- The timer interval controls when groups are queued, not exact execution time.
+- The timer cycle time (`<Time>`) controls how frequently groups are queued, not exact execution time.
 - Actual execution depends on queue state and execution time of earlier work.
-- Timer content groups execute in the order listed by the timer.
+- Timer content groups execute in the order listed by the timer, separated by the `<Interval>` delay.
 - Groups can interleave with work from other timers, external SETs, triggers, and actions.
 
-If a timer's last group is a poll-style group, the timer waits for the previous iteration to finish before adding that group again. This prevents queue overflow when execution takes longer than the timer interval.
+If a timer's last group is a poll-style group, the timer waits for the previous iteration to finish before adding that group again. This prevents queue overflow when execution takes longer than the timer cycle time (`<Time>`).
 
 Avoid a non-poll final group in regular timers; it can make the timer appear idle too early and cause queue or stack flooding.
+
+### Rate Limiting, Request Pacing, and Load Control (<Interval> vs <Time>)
+
+When an external device or HTTP API is under high processing load or returning call failures due to a high volume of requests or bursts:
+
+- **When reducing polling is not an option**: If operational requirements mandate that data cannot be polled less frequently (i.e. increasing `<Time>` is not permitted), the correct solution is to **increase `Timer.Interval`** (the `<Interval>` element in `<Timer>`).
+  - Increasing `Timer.Interval` (e.g. from 75 ms to 250 ms or 500 ms) inserts a larger delay between consecutive groups/requests within that timer run.
+  - This spaces out the calls evenly over the polling cycle, eliminating request bursts and giving the external API processing headroom without reducing the polling rate or dropping any metrics.
+- **Why reducing the number of groups is WRONG**:
+  - Keeping the same number of sessions while reducing the number of groups does not reduce the number of HTTP calls (each session still issues its HTTP request).
+  - Because `Timer.Interval` is the spacing delay applied *between groups*, reducing the number of groups removes pacing delays and causes sessions in the same group to execute in immediate succession with zero inter-group delay. This intensifies the request burst and worsens device overload.
+  - Decreasing `Timer.Interval` is also wrong because it shortens the delay between requests, accelerating the burst.
+  - DataMiner does not have an automatic built-in load balancing mechanism for external HTTP APIs; pacing must be configured via `Timer.Interval`.
 
 ### Polling During Startup
 
@@ -81,8 +98,9 @@ Use a buffer group with queued execution when ordering matters:
 - A timer schedules the group; the group sends one or more HTTP sessions.
 - Use poll groups for ordinary HTTP request/response polling.
 - Plain HTTP polling does not use serial command/response/pair structures.
-- HTTP 4xx and 5xx responses cause timeout behavior.
+- HTTP 4xx (client errors), 5xx (server errors), and 6xx (system errors) responses always contribute to Element Timeout behavior. 1xx and 2xx do not cause timeout, while 3xx redirects automatically when a `Location` header is present (unless customRedirect is configured).
 - HTTP 3xx redirects are followed automatically when a `Location` header is present unless custom redirect behavior is configured.
+- Placing multiple groups in the protocol execution queue one after another to send out different HTTP requests that use the same `<Session>` definition does **not** cause all generated sessions to be identical with only the last values set on session parameters. Each request is composed for its respective group execution.
 
 ### Serial Polling
 
@@ -100,9 +118,28 @@ Use a buffer group with queued execution when ordering matters:
 
 ## Ping Behavior
 
-- HTTP ping groups should reference valid HTTP sessions.
-- SNMP ping behavior falls back to the first valid polling group when no explicit ping group exists.
-- Serial ping behavior depends on pair ping settings or the first valid pair containing a response.
+In DataMiner connectors, "ping" serves two distinct purposes:
+
+### 1. Element Wizard Connection Testing (`ping="true"`)
+- Allows users to test communication settings (e.g. IP address, port, credentials) in the Element Creation or Update Wizard **before creating or saving the element**.
+- Configured by setting the attribute `ping="true"` on a polling group (or `<Pair ping="true">` in serial):
+  ```xml
+  <Group id="10" ping="true">
+    <Name>Test Connection</Name>
+    <Type>poll</Type>
+    <Content>
+      <Session>10</Session>
+    </Content>
+  </Group>
+  ```
+- If a group with `ping="true"` is defined, the **Test connection** button in the Element Wizard is enabled. Clicking it executes the designated group against the entered IP address. If no group has `ping="true"`, the button is disabled.
+
+### 2. Slow Poll Mode / Timeout Recovery (Running Elements)
+- Used after element creation when an element loses communication and enters timeout: normal timers stop and only a recovery ping group runs at regular intervals.
+- Selection rules:
+  - **HTTP**: Uses the group with `id="-1"` containing a lightweight session.
+  - **SNMP**: Uses the **first defined group** in `protocol.xml` (must be a valid SNMP poll group, not After Startup).
+  - **Serial**: Uses the pair with `ping="true"`, or the lowest-ID pair containing a response.
 - Slow poll mode ping behavior only applies to the main connection.
 
 ## Multithreaded Timers
@@ -135,6 +172,7 @@ Timer control actions can start, stop, restart, or reschedule timers.
 
 - Separate timers by polling frequency: fast, normal, slow, and maintenance-style polling.
 - Keep group execution short.
+- Use `<Interval>` (`Timer.Interval`) to pace groups across the polling cycle when communicating with rate-limited or high-load devices and APIs, especially when reducing polling frequency (`<Time>`) is not an option.
 - Use the queue-control actions described in `logic-triggers-actions.md` when repeated triggers can flood the queue.
 - Avoid long network timeouts on high-frequency timers.
 - Avoid frequent updates to DCF-generating tables because they can trigger heavy interface alarm recalculation.

@@ -4,8 +4,8 @@ description: 'Generate TOON-format simulation files from DataMiner connector pro
 argument-hint: 'Describe the simulation task: e.g. "generate simulation file for this SNMP connector" or "create HTTP simulation data from protocol.xml"'
 license: LicenseRef-Skyline-Agent-Marketplace
 metadata:
-  updated: 2026-09-11
-  version: 1.1
+  updated: 2026-10-07
+  version: 1.2
 ---
 
 # DataMiner TOON Simulation File Generation
@@ -14,11 +14,12 @@ metadata:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2 | 2026-10-07 | Updated paired agent reference to dataminer-connector-simulation-generator. |
 | 1.1 | 2026-09-11 | Added recognition of SecureCoding deserialization when inferring HTTP response models from QActions. |
 
 Generate `.toon` simulation files that define realistic mock data for every endpoint in a DataMiner connector. The output file is a standalone simulation definition designed for consumption by a dedicated simulator tool/process.
 
-> **Paired agent**: `dataminer-simulation-generator` — owns the generation workflow. This skill owns the TOON encoding rules, simulation schema definitions, and data generation heuristics.
+> **Paired agent**: `dataminer-connector-simulation-generator` — owns the generation workflow. This skill owns the TOON encoding rules, simulation schema definitions, and data generation heuristics.
 
 ## Supported Connection Types
 

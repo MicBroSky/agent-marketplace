@@ -119,7 +119,8 @@ Use row context only when the triggering/polling pattern supports it and row-spe
 - Use protocol name/version placeholders in DLL imports to avoid version churn.
 - Edited QAction DLLs require an element restart to load new versions.
 - Edited third-party DLLs require a DataMiner restart.
-- QActions compile with C# up to 7.3 and run against the .NET Framework available to DataMiner.
+- QActions compile strictly with **C# 7.3** (`<LangVersion>7.3</LangVersion>`) and target **.NET Framework 4.8** (`<TargetFramework>net48</TargetFramework>`). Never use C# 8.0/9.0+ syntax (such as target-typed `new()`, file-scoped namespaces, `record`, `init`, switch expressions, `is not null`, `using var`, or `<Nullable>enable</Nullable>`) or bump `<LangVersion>` above `7.3`.
+- Only fully compiling QAction solutions (`dotnet build` with 0 errors) may ever be returned to the user or committed/pushed to a PR.
 
 Reusable code should live in a shared precompiled QAction rather than being duplicated in individual QActions.
 

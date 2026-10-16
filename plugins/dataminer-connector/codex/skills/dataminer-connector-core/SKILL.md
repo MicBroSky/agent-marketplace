@@ -4,8 +4,8 @@ description: Foundation skill for all DataMiner connector tasks. Explains what D
 argument-hint: 'Describe the task or question: e.g. "implement HTTP polling", "write a QAction", "create a new connector", "understand parameter change events"'
 license: LicenseRef-Skyline-Agent-Marketplace
 metadata:
-  updated: 2026-10-05
-  version: 4.5
+  updated: 2026-10-07
+  version: 4.10
 ---
 
 > **Skill reference notice:** This skill refers to additional skills that are not included in this distribution: `dataminer-dataapi`. If the task needs one, report the missing prerequisite and obtain it or explicitly narrow the task; do not claim the unsupported route is complete.
@@ -15,6 +15,11 @@ metadata:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 4.10 | 2026-10-07 | Updated skill routing to dataminer-connector-orchestrator. |
+| 4.9 | 2026-10-07 | Clarified session parameter resolution when reusing a session across multiple queued groups (requests are not identical using only the last set values). |
+| 4.8 | 2026-10-07 | Documented HTTP status code handling (1XX-6XX) and the three code classes that always contribute to Element Timeout (4XX, 5XX, 6XX System Errors). |
+| 4.7 | 2026-10-07 | Documented Element Wizard connection testing using Group ping="true" attribute. |
+| 4.6 | 2026-10-07 | Clarified Timer `<Time>` (polling cycle) vs `<Interval>` (inter-group pacing delay) and request pacing for rate-limited/high-load APIs. |
 | 4.5 | 2026-10-05 | Added review checklist item for discrete parameters with numeric backend for pre-known values. |
 | 4.4 | 2026-10-02 | Corrected canonical SNMP writes and SNMP/HTTP timer-driven polling examples; clarified startup scheduling. |
 | 4.3 | 2026-09-27 | Aligned packaged resource references and execution contracts. |
@@ -181,7 +186,7 @@ Use this table to decide which skill(s) to load for a task.
 | Push data into a name-addressable **dynamic** element via the DataAPI HTTP feature (no fixed PIDs / no protocol.xml) | `dataminer-dataapi` (and `dataminer-idms` for the normal fixed-PID path) |
 | Write connector help/documentation pages | `dataminer-connector-help` |
 | Review a connector against XML schema, runtime logic, QAction, and validator expectations | `dataminer-protocol-xml-reference` + relevant `logic-*` files + `dataminer-qaction` + `dataminer-validation` |
-| Plan and delegate a multi-step connector task | `dataminer-orchestrator` |
+| Plan and delegate a multi-step connector task | `dataminer-connector-orchestrator` |
 | Run inline validation gates (XSD check, C# auto-fix) | `dataminer-validation-gates` |
 | Investigate runtime symptoms, RTEs, slow SNMP tables, smart-serial server queues, Swarming, or TLS | `dataminer-connector-debugging` + the relevant communication reference |
 | Understand DataMiner / connector terminology | `references/glossary.md` (this skill) |

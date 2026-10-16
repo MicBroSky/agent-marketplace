@@ -4,14 +4,15 @@ description: 'DataMiner connector validation: running the validator CLI, parsing
 argument-hint: 'Describe the validation task: e.g. "run validator on my solution", "suppress validator warning 2.5.1"'
 license: LicenseRef-Skyline-Agent-Marketplace
 metadata:
-  updated: 2026-09-29
-  version: 3.0
+  updated: 2026-10-07
+  version: 3.1
 ---
 
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.1 | 2026-10-07 | Updated paired agent reference to dataminer-connector-validator. |
 | 3.0 | 2026-09-29 | Require checking existing validator availability and user approval before machine-wide installation. |
 | 2.9 | 2026-09-14 | Made helper recovery conditional on projects that actually reference generated helper output. |
 | 2.8 | 2026-09-11 | Reconciled high-churn `volatile` guidance: incompatible alarm/persistence requirements now require explicit redesign instead of silently removing behavior. |
@@ -29,7 +30,7 @@ metadata:
 
 Covers running the official Skyline validator and interpreting its output.
 
-> **Paired agent**: `dataminer-validator` — owns workflow, output format, and fix-or-suppress decisions. This skill owns CLI reference, severity definitions, suppression syntax, and error codes. Keep shared concepts (severity thresholds, suppression rules) in sync.
+> **Paired agent**: `dataminer-connector-validator` — owns workflow, output format, and fix-or-suppress decisions. This skill owns CLI reference, severity definitions, suppression syntax, and error codes. Keep shared concepts (severity thresholds, suppression rules) in sync.
 
 Load `dataminer-sdk` alongside this skill. Load `dataminer-dis` as well when the user is working in Visual Studio with DIS available and interactive validator review would help. The official Skyline validator is mandatory during development; manual XML review or only local helper gates are never sufficient.
 

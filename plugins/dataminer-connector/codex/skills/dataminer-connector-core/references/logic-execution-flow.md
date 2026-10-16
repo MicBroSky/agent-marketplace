@@ -79,6 +79,9 @@ The main protocol thread in `SLProtocol`:
 
 The protocol thread owns a priority queue for group execution. Action-specific queue positions are owned by `logic-triggers-actions.md`.
 
+- Groups in the queue execute sequentially on the protocol thread.
+- When multiple groups in the queue execute the same `<Session>` (e.g. dispatched sequentially with different dynamic parameter values), each HTTP request is composed for its specific group execution. It is **false** that all generated HTTP sessions will be identical using only the last values set on session parameters.
+
 ## Startup Sequence
 
 1. DataMiner reads protocol configuration.

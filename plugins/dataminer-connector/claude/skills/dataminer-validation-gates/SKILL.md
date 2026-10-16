@@ -4,14 +4,16 @@ description: 'Run inline validation gates during connector development: schema v
 argument-hint: 'Describe the validation task: e.g. "validate XML after authoring", "check build quality after QAction changes", "run schema verification gate"'
 license: LicenseRef-Skyline-Agent-Marketplace
 metadata:
-  updated: 2026-05-27
-  version: 2.0
+  updated: 2026-10-16
+  version: 2.2
 ---
 
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.2 | 2026-10-16 | Enforced .NET Framework 4.8 (`net48`) and C# 7.3 in Step 4 and made a zero-error `dotnet build` a hard blocker before returning code to the user or committing/pushing to a PR. |
+| 2.1 | 2026-10-07 | Updated agent reference to dataminer-connector-qaction-writer. |
 | 2.0 | 2026-05-27 | Removed EcsAgent CLI dependency. XML validation is now agent-driven using `dataminer-protocol-xml-reference` schema files. C# style is prevention-only (no post-hoc CLI fixer). Build validation uses plain `dotnet build`. |
 | 1.2 | 2026-05-24 | Step 8 (official validator checkpoint) replaced inline CLI snippet with a pointer to `dataminer-validation` for the full CLI reference. |
 | 1.1 | 2026-04-13 | Added Step 3: Fix C# (fix-csharp) for SA1505/SA1508/SA1028 auto-fix. Renumbered subsequent steps. |
@@ -87,17 +89,19 @@ If these issues slip through (visible in build output), fix them directly via fi
 
 Scope: Only check `QAction_*/QAction_*.cs` files. Skip `QAction_Helper` (auto-generated).
 
-## Step 4: Build Quality Gate (after C# code)
+## Step 4: Build Quality Gate — Hard Compilation Gate (after C# code)
 
-Run after writing or modifying QAction C# code:
+Run after writing or modifying QAction C# code, and again after any final test/validator/formatting edit:
 
 ```bash
 dotnet build "{solution_root}/{solution_name}.sln" --warnaserror
 ```
 
-- If build **succeeds**: gate passes.
-- If build **fails with errors**: read the MSBuild output. Compilation errors go back to **dataminer-qaction-writer** with the error messages. SA*/SLC*/SXA* warnings (treated as errors by `--warnaserror`) should be fixed directly via file editing per Step 3 rules.
-- Retry up to **3 times**. If still failing, report remaining errors to the user.
+- **Target & Language Rule**: All QAction projects MUST target **.NET Framework 4.8** (`<TargetFramework>net48</TargetFramework>`) and **C# 7.3** (`<LangVersion>7.3</LangVersion>`). Never use C# 8.0/9.0+ syntax (target-typed `new()`, file-scoped namespaces, `record`, `init`, switch expressions, `is not null`, `using var`, `??=`, `<Nullable>enable</Nullable>`) and never bump `<LangVersion>` above `7.3` to silence `CS8370`.
+- **Hard Compilation Gate**: **Only fully compiling code (`dotnet build` passing with 0 errors across the solution) may ever be returned to the user or committed/pushed to a PR.**
+- If build **succeeds with 0 errors**: gate passes.
+- If build **fails with errors**: read the MSBuild output. Compilation errors (`error CS*`) go back to **dataminer-connector-qaction-writer** with the exact error messages. SA*/SLC*/SXA* warnings (treated as errors by `--warnaserror`) should be fixed directly via file editing per Step 3 rules.
+- Retry up to **3 times**. If the build still fails after 3 attempts, stop in `BLOCKED` state and report the blocker — **never return uncompiled code as a finished deliverable and never run `git commit`, `git push`, or create/update a PR while compilation errors remain.**
 
 ## Step 5: XSD Error-to-Fix Mapping
 

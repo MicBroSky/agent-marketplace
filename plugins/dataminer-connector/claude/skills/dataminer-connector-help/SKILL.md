@@ -4,14 +4,15 @@ description: 'Guidelines for writing DataMiner connector help/documentation page
 argument-hint: 'Describe the documentation task: e.g. "create help page for this connector", "document the connection settings"'
 license: LicenseRef-Skyline-Agent-Marketplace
 metadata:
-  updated: 2026-09-16
-  version: 2.1
+  updated: 2026-10-07
+  version: 2.2
 ---
 
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.2 | 2026-10-07 | Updated paired agent reference to dataminer-connector-help-writer. |
 | 2.1 | 2026-09-16 | Added front matter, repository/TOC, conditional Web Interface and Redundancy, and documentation validation gates. |
 | 2.0 | 2026-04-13 | Extracted Connection Documentation Templates into `references/connection-templates.md`. |
 | 1.1 | 2026-03-27 | Initial release. |
@@ -20,7 +21,7 @@ metadata:
 
 Guidelines for creating connector documentation pages following Skyline Communications standards.
 
-> **Paired agent**: `dataminer-help-writer` — owns workflow, extraction logic, and output format. This skill owns page structure templates, section requirements, and formatting rules. Keep shared concepts (page types, required sections) in sync.
+> **Paired agent**: `dataminer-connector-help-writer` — owns workflow, extraction logic, and output format. This skill owns page structure templates, section requirements, and formatting rules. Keep shared concepts (page types, required sections) in sync.
 
 ---
 

@@ -21,10 +21,10 @@ Complete reference for scaffolding new DataMiner connector solutions with the of
 |-----------|----------|---------|-------------|
 | `ConnectorName` | **Yes** | `Connector1` | Name of the connector (file names, XML `<Name>`, solution name) |
 | `VendorName` | **Yes** | _(empty)_ | The vendor/manufacturer name |
-| `VendorOid` | **Yes** | `1.3.6.1.4.1.8813.2.` | Skyline-assigned connector OID matching `1.3.6.1.4.1.8813.2.<number>`, without a trailing dot. |
-| `DeviceOid` | **Yes** | _(empty)_ | Device-specific OID **suffix number only** (e.g. `1`, `42`). |
+| `VendorOid` | No | `1.3.6.1.4.1.8813.2.XX` | Skyline-assigned connector OID matching `1.3.6.1.4.1.8813.2.<number>`, without a trailing dot. Defaults to `1.3.6.1.4.1.8813.2.XX` if omitted. |
+| `DeviceOid` | No | `XX` | Device-specific OID **suffix number only** (e.g. `1`, `42`). Defaults to `XX` if omitted. |
 | `ProviderName` | **Recommended** | _(empty)_ | Always pass `"Skyline Communications"` |
-| `IntegrationId` | **Recommended** | `DMS-DRV-` | Skyline integration ID (format: `DMS-DRV-NNNN`). Use `DMS-DRV-` as placeholder. |
+| `IntegrationId` | No | `DMS-DRV-XXXX` | Skyline integration ID (format: `DMS-DRV-NNNN`). Defaults to `DMS-DRV-XXXX` if omitted. |
 | `ElementType` | **Recommended** | _(empty)_ | Category label (e.g., `Switch`, `Router`, `Encoder`, `Decoder`, `Probe`) |
 | `ConnectionType` | No | `virtual` | Main connection type (see choices below) |
 | `SecondConnectionType` | No | `none` | Optional second connection type |
@@ -54,15 +54,14 @@ Complete reference for scaffolding new DataMiner connector solutions with the of
 
 ## OID Conventions
 
-- **VendorOid**: Must be a Skyline-assigned connector OID matching `1.3.6.1.4.1.8813.2.<number>`, without a trailing dot. The value is written directly to `<VendorOID>`.
+- **VendorOid**: Skyline-assigned connector OID matching `1.3.6.1.4.1.8813.2.<number>`, without a trailing dot. The value is written directly to `<VendorOID>`. Defaults to `1.3.6.1.4.1.8813.2.XX` if not provided by user.
   - Example: `1.3.6.1.4.1.8813.2.1`
-  - If the assigned value is unknown, ask the user; do not invent a placeholder.
-- **DeviceOid**: Device-specific **suffix number only** (e.g. `1`, `42`, `2957`).
+- **DeviceOid**: Device-specific **suffix number only** (e.g. `1`, `42`, `2957`). Defaults to `XX` if not provided by user.
   - Example: `VendorOid=1.3.6.1.4.1.8813.2.12345` + `DeviceOid=2957` → `<VendorOID>1.3.6.1.4.1.8813.2.12345</VendorOID>` and `<DeviceOID>2957</DeviceOID>`
 
 ## Integration ID Format
 
-`DMS-DRV-NNNN` — a unique 4-digit tracker ID from Skyline project tracking. Use `DMS-DRV-` as placeholder during development.
+`DMS-DRV-NNNN` — a unique 4-digit tracker ID from Skyline project tracking. Defaults to `DMS-DRV-XXXX` if not provided by user.
 
 ---
 
@@ -74,8 +73,8 @@ dotnet new dataminer-connector-solution \
   --connector-name "Vendor Device Name" \
   --provider-name "Skyline Communications" \
   --vendor-name "Vendor Inc" \
-  --vendor-oid "1.3.6.1.4.1.XXXXX" \
-  --device-oid "YY" \
+  --vendor-oid "1.3.6.1.4.1.8813.2.XX" \
+  --device-oid "XX" \
   --integration-id "DMS-DRV-XXXX" \
   --element-type "Switch"
 ```
@@ -182,6 +181,7 @@ If the solution has been migrated to `.slnx`, the same folder appears as XML ins
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
+    <LangVersion>7.3</LangVersion>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>

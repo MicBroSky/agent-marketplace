@@ -4,8 +4,8 @@ description: 'HTTP/HTTPS communication for DataMiner connectors: session and con
 argument-hint: 'Describe the HTTP task: e.g. "add HTTP session for REST API", "configure HTTPS with certificate", "parse JSON response"'
 license: LicenseRef-Skyline-Agent-Marketplace
 metadata:
-  updated: 2026-09-14
-  version: 1.3
+  updated: 2026-10-07
+  version: 1.7
 ---
 
 # DataMiner HTTP Communication
@@ -14,6 +14,10 @@ metadata:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.7 | 2026-10-07 | Clarified parameter resolution when reusing a session across multiple queued groups (requests are not identical using only the last set values). |
+| 1.6 | 2026-10-07 | Documented status code handling (1XX-6XX) and the three code classes that always contribute to Element Timeout (4XX, 5XX, 6XX System Errors). |
+| 1.5 | 2026-10-07 | Documented Element Wizard connection testing using Group ping="true" attribute. |
+| 1.4 | 2026-10-07 | Added HTTP request pacing and rate limiting guidance via Timer.Interval. |
 | 1.3 | 2026-09-14 | Corrected the HTTP read-versus-dummy rationale independently of optional generated helper output. |
 | 1.2 | 2026-09-11 | Corrected keyed authentication headers, secret handling, secure JSON deserialization, and certificate-validation guidance. |
 

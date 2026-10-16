@@ -823,7 +823,7 @@ Flag every violation with its rule ID and severity when reviewing or generating 
 
 - `[Major]`[`4.10.1`] **IncompatibleContentWithGroupType**: Incompatible 'Group/Content' child '{1}' with 'Group/Type' '{0}'. Group ID '{2}'.
 - `[Major]`[`4.10.2`] **MixedTypes**: Unsupported mixed group content '{0}'. Group ID '{1}'.
-- `[Minor]`[`4.10.3`] **MaxItemsMultipleGet**: Group with 'multipleGet' true contains more than 20 content elements. Group ID '{0}'.
+- `[Minor]`[`4.10.3`] **MaxItemsMultipleGet**: Group with 'multipleGet' true contains more than 10 content elements. Group ID '{0}'.
 - `[Minor]`[`4.10.4`] **MaxItems**: Group contains more than 10 content elements. Group ID '{0}'.
 - `[Major]`[`4.10.5`] **MissingTag**: Missing tag '{0}' in {1} '{2}'.
 

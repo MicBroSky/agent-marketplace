@@ -4,14 +4,16 @@ description: 'QAction (C#) development for DataMiner connectors: writing QAction
 argument-hint: 'Describe the QAction task: e.g. "parse JSON response into table", "write QAction for SNMP trap processing"'
 license: LicenseRef-Skyline-Agent-Marketplace
 metadata:
-  updated: 2026-09-27
-  version: 2.2
+  updated: 2026-10-16
+  version: 2.4
 ---
 
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.4 | 2026-10-16 | Enforced strict .NET Framework 4.8 (`net48`) and C# 7.3 rules (forbidding C# 8/9+ syntax and `<LangVersion>` overrides) and added the hard zero-error compilation gate before returning code or opening a PR. |
+| 2.3 | 2026-10-07 | Updated paired agent reference to dataminer-connector-qaction-writer. |
 | 2.2 | 2026-09-27 | Aligned packaged resource references and execution contracts. |
 | 2.1 | 2026-09-14 | Distinguished built-in SLProtocol APIs, Protocol.Extension methods, and generated typed helpers; made helper use conditional. |
 | 2.0 | 2026-09-11 | Replaced direct Newtonsoft deserialization examples with the SecureCoding runtime API, added secret-safe logging/certificate rules, and corrected CS9057 handling so analyzers remain active. |
@@ -28,11 +30,11 @@ metadata:
 
 Covers writing and modifying QActions — the C# code blocks in DataMiner connectors. Load `dataminer-connector-core` alongside for naming conventions and code style.
 
-> **Paired agent**: `dataminer-qaction-writer` — owns workflow, NuGet steps, and the conditional helper decision. This skill owns SLProtocol API reference, code patterns, and examples. Keep shared concepts (table fill methods, logging patterns) in sync.
+> **Paired agent**: `dataminer-connector-qaction-writer` — owns workflow, NuGet steps, and the conditional helper decision. This skill owns SLProtocol API reference, code patterns, and examples. Keep shared concepts (table fill methods, logging patterns) in sync.
 
 ## When to Load This Skill
 
-Load this skill (and invoke `dataminer-qaction-writer`) whenever **any** of the following conditions apply:
+Load this skill (and invoke `dataminer-connector-qaction-writer`) whenever **any** of the following conditions apply:
 
 - You are writing or modifying a `QAction_*.cs` file or the `<QActions>` section of `protocol.xml`.
 - The build output contains **any warning or error** lines from `Sdk.targets`, a `QAction_*.csproj`, or `QAction_Helper.csproj` — regardless of project type (connector, TestPackage, Automation solution).
@@ -64,6 +66,10 @@ Read the [QAction guard rails](references/dataminer-qaction.instructions.md) whe
 working on QAction code. The publisher includes this authoritative source as a skill reference
 and, for Copilot, a native rule. Automatic rule application depends on the client/version;
 always follow this skill even when no instruction is automatically attached.
+
+> **Target `.NET Framework 4.8` (`net48`) and `C# 7.3` ONLY.** DataMiner connector QActions run on .NET Framework 4.8 and compile with C# 7.3. NEVER use C# 8.0/9.0+ syntax (target-typed `new()`, file-scoped `namespace X;`, `record`, `init`, switch expressions, `is not null`, `using var`, `??=`, `string?`, index/range `^`/`..`) and NEVER set `<LangVersion>` above `7.3` in `.csproj` or `Directory.Build.props`.
+
+> **Hard Compilation Gate: ONLY fully compiling code (`dotnet build` with 0 errors) may ever be returned to the user or committed/pushed to a PR.** Always build the solution after editing QAction code and fix all compilation errors before completing the task.
 
 > **Do NOT invent or misclassify SLProtocol methods.** `FillArray`, `FillArrayNoDelete`, `FillArrayWithColumn`, `SetRow`, `AddRow`, `DeleteRow`, and `CheckTrigger` are built-in `SLProtocol` members. `GetColumns` and `SetColumns` require `Skyline.DataMiner.Utils.Protocol.Extension`. Generated `SLProtocolExt` is only for connector-specific typed properties/table wrappers.
 
@@ -247,6 +253,7 @@ After creating the project files, add the project to the **`QActions` solution f
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
+    <LangVersion>7.3</LangVersion>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
@@ -257,7 +264,22 @@ After creating the project files, add the project to the **`QActions` solution f
 
 The official connector template includes a `QAction_Helper` project and `ProjectReference` by default. Preserve that reference when this QAction consumes generated `Parameter`, `SLProtocolExt`, `{Table}QActionTable`, or `{Table}QActionRow` members. If the solution is intentionally helper-free, omit the project reference, use descriptive local constants, and compile against `Skyline.DataMiner.Dev.Protocol`; see the [compilable helper-free example](references/examples/helper-free-qaction/QAction.cs).
 
-> ⚠️ **NEVER** add `<Nullable>enable</Nullable>` (or any `<Nullable>` element) to a QAction `.csproj`. The DataMiner SDK targets `net48`, which defaults to **C# 7.3** — nullable reference types require C# 8.0+. Adding `<Nullable>enable</Nullable>` causes **error CS8630** on every affected QAction project, blocking compilation entirely. If NuGet packages are required, add an `<ItemGroup><PackageReference …/>` block — do not modify the `<PropertyGroup>` settings shown above.
+> ⚠️ **STRICT `.NET Framework 4.8` (`net48`) AND `C# 7.3` REQUIREMENT**:
+> - **NEVER** change `<TargetFramework>` away from `net48` or set `<LangVersion>` higher than `7.3` (never `8.0`, `9.0`, `latest`, or `preview`). DataMiner's `SLScripting` runtime and the CICD Validator (`[Critical][3.4.1] CompilationFailure`, `[Warning][3.4.3] NoCSharpCodeAnalysisPerformed`) compile QActions strictly as C# 7.3 on .NET Framework 4.8.
+> - **NEVER** add `<Nullable>enable</Nullable>` (or any `<Nullable>` element) to a QAction `.csproj` — nullable reference types require C# 8.0+ and cause **error CS8630**.
+> - **NEVER** use C# 8.0/9.0+ syntax in QAction `.cs` files (`CS8370`):
+>
+> | Forbidden C# 8.0 / 9.0+ Syntax | Valid C# 7.3 Replacement |
+> |---|---|
+> | Target-typed `new()` (`List<object[]> rows = new();`) | `var rows = new List<object[]>();` or `new List<object[]>()` |
+> | File-scoped namespace (`namespace MyConnector;`) | Block-scoped `namespace MyConnector { ... }` |
+> | `record` types or `init` properties (`{ get; init; }`) | Standard `class` with `{ get; set; }` |
+> | Switch expressions (`x switch { ... }`) | Traditional `switch (x) { case ...: return ...; }` |
+> | Pattern combinators (`x is not null`, `x is > 0 and < 5`) | `x != null`, `x > 0 && x < 5` |
+> | `using var stream = ...;` declaration | `using (var stream = ...) { ... }` block |
+> | Null-coalescing assignment (`items ??= new List<T>();`) | `if (items == null) { items = new List<T>(); }` |
+> | Nullable annotations (`string?`, `null!`) | Standard C# 7.3 reference types |
+> | Index/range (`arr[^1]`, `arr[1..3]`), `static` local functions | `arr[arr.Length - 1]`, `Skip`/`Take` or loop, private static methods |
 
 ---
 

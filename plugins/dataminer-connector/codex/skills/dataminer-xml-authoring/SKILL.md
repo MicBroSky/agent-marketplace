@@ -4,14 +4,19 @@ description: 'DPML XML authoring for DataMiner connectors: protocol structure, p
 argument-hint: 'Describe the XML change: e.g. "add SNMP table with 5 columns", "create HTTP polling session", "configure alarming thresholds", "add DVE child element"'
 license: LicenseRef-Skyline-Agent-Marketplace
 metadata:
-  updated: 2026-10-05
-  version: 2.41
+  updated: 2026-10-12
+  version: 2.46
 ---
 
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.46 | 2026-10-12 | Added Version and VersionHistory authoring guidance and template snippets for adding MinorVersion entries and managing version synchronization. |
+| 2.45 | 2026-10-07 | VendorOID, DeviceOID, and IntegrationID default to 1.3.6.1.4.1.8813.2.XX, XX, and DMS-DRV-XXXX when omitted by user. |
+| 2.44 | 2026-10-07 | Updated paired agent reference and routing rules to dataminer-connector-xml-author. |
+| 2.43 | 2026-10-07 | Documented Element Wizard connection testing using Group ping="true" attribute. Updated DIS validator rule 4.10.3 threshold in protocol rules reference from 20 to 10 content items for multipleGet groups. |
+| 2.42 | 2026-10-07 | Clarified Timer `<Time>` cycle time vs `<Interval>` inter-group pacing delay and request pacing for rate-limited/high-load APIs. |
 | 2.41 | 2026-10-05 | Added authoring rules and checklist item for discrete parameters with numeric backends for pre-known values. |
 | 2.40 | 2026-10-02 | Clarified SNMP write setup, scalar multipleGet grouping, action priority, and timer-driven startup polling. |
 | 2.39 | 2026-09-27 | Aligned packaged resource references and execution contracts. |
@@ -20,11 +25,11 @@ metadata:
 | 2.36 | 2026-09-11 | Corrected the full parameter-schema reference to point to its owning `dataminer-protocol-xml-reference` skill. |
 | 2.35 | 2026-08-13 | Corrected VendorOID guidance: the value must be a Skyline-assigned connector OID matching the DataMiner schema, not the device vendor's IANA enterprise or sysObjectID OID. |
 | 2.34 | 2026-08-13 | Consolidated naming guidance into scoped mechanical rules, removed an unsafe whole-file `<Name>` grep, and clarified that descriptive camelCase table names are valid. |
-| 2.33 | 2026-08-13 | **MIB table name derivation trap.** Added `tx21BucInfoTable`→`tx21BucInfo`, `tx21BucAlarmTable`→`tx21BucAlarm`, `tx21BucSensorTable`→`tx21BucSensor` examples across SKILL.md, table-naming reference, table-authoring-gates reference, pre-completion checklist, and `dataminer-xml-author` agent Step 3b. Clarified that the DataMiner table `<Name>` must be derived from the lowercase-first OBJECT-TYPE descriptor, not from the uppercase-first SEQUENCE type name (`Tx21BucInfoEntry`). |
+| 2.33 | 2026-08-13 | **MIB table name derivation trap.** Added `tx21BucInfoTable`→`tx21BucInfo`, `tx21BucAlarmTable`→`tx21BucAlarm`, `tx21BucSensorTable`→`tx21BucSensor` examples across SKILL.md, table-naming reference, table-authoring-gates reference, pre-completion checklist, and `dataminer-connector-xml-author` agent Step 3b. Clarified that the DataMiner table `<Name>` must be derived from the lowercase-first OBJECT-TYPE descriptor, not from the uppercase-first SEQUENCE type name (`Tx21BucInfoEntry`). |
 | 2.32 | 2026-08-13 | **Five NamingConventions/XmlStructure fixes from eval findings (bucInfo-table columns, multi-word compound prefix).** (1) Added `BucInfoIndex`→`bucInfoIndex`, `BucInfoModelNumber`→`bucInfoModelNumber`, `BucInfoSerialNumber`→`bucInfoSerialNumber`, `BucInfoFirmwareVersion`→`bucInfoFirmwareVersion`, `BucInfoPowerWatts`→`bucInfoPowerWatts`, `BucInfoFrequencyBand`→`bucInfoFrequencyBand`, `BucInfoRFRange`→`bucInfoRFRange`, `BucInfoIFRange`→`bucInfoIFRange`, `BucInfoLOFrequency`→`bucInfoLOFrequency` to the camelCase conversion table — covers the multi-word compound prefix trap. (2) Extended inline authoring gate callout: when the table `<Name>` is itself a multi-word camelCase string (e.g. `bucInfo`), the column prefix must equal that exact string verbatim — `BucInfo` is wrong even though each word looks correctly cased. (3) Added Before/After: Multi-Word Compound Prefix Trap example block to `references/table-authoring-gates.md` using a `bucInfo` table. (4) Strengthened VendorOID routing rule to explicitly name `VendorOID` as the concrete XmlStructure WARN example and clarified that when the vendor OID is unknown, the agent must look it up at IANA or ask the user — not leave Skyline's OID as a placeholder. |
-| 2.31 | 2026-08-13 | **Four NamingConventions fixes from eval findings (interfaces-table column descriptions).** (1) Extended routing rule: NamingConventions findings now explicitly cover `<Description>` suffix violations ("`Description 'X' should end with '(Y)'"`) in addition to `<Name>` casing violations — both are blocking and require `dataminer-xml-author` invocation immediately. (2) Extended inline authoring gate to cover `<Description>` suffix: every table column `<Description>` MUST end with `(TableDescription)` — apply at write time, not post-scan. (3) Added `InterfaceKey`→`interfaceKey`, `InterfaceName`→`interfaceName`, `InterfaceType`→`interfaceType`, `InterfaceSpeed`→`interfaceSpeed`, `InterfaceStatus`→`interfaceStatus` to the camelCase conversion table (singular "Interface" prefix trap). (4) Added Before/After: Description Suffix Trap example block to `references/table-authoring-gates.md` using an `interfaces` table. |
-| 2.30 | 2026-08-13 | **Three NamingConventions fixes from eval findings (device-table columns).** (1) Added `DeviceKey`→`deviceKey`, `DeviceName`→`deviceName`, `DeviceStatus`→`deviceStatus`, `DeviceSpeed`→`deviceSpeed` rows to the camelCase conversion table — covers the common single-word table prefix trap. (2) Strengthened routing rule: NamingConventions findings BLOCK task completion — the orchestrator must invoke `dataminer-xml-author` immediately, not as an optional post-step, and must not return results until all findings are resolved. (3) Added Before/After: Short Single-Word Prefix Trap example block to `references/table-authoring-gates.md` using a `device` table. |
-| 2.29 | 2026-08-12 | **Four NamingConventions fixes from eval findings.** (1) Added NamingConventions WARN/FAIL to agent routing rule — `dataminer-xml-author` must now be invoked for both XmlStructure WARNs and NamingConventions WARNs or FAILs on parameter/table column `<Name>` casing. (2) Extended inline authoring gate callout to explicitly cover table column `<Name>` elements — prefix must match table `<Name>` verbatim including casing. (3) Added four table column examples to camelCase conversion table (`InterfacesName`, `InterfacesIpAddress`, `InterfacesLinkState`, `InterfacesTxPackets`). (4) Added per-column self-check rule + Before/After: PascalCase Prefix Trap example block to `references/table-authoring-gates.md`. |
+| 2.31 | 2026-08-13 | **Four NamingConventions fixes from eval findings (interfaces-table column descriptions).** (1) Extended routing rule: NamingConventions findings now explicitly cover `<Description>` suffix violations ("`Description 'X' should end with '(Y)'"`) in addition to `<Name>` casing violations — both are blocking and require `dataminer-connector-xml-author` invocation immediately. (2) Extended inline authoring gate to cover `<Description>` suffix: every table column `<Description>` MUST end with `(TableDescription)` — apply at write time, not post-scan. (3) Added `InterfaceKey`→`interfaceKey`, `InterfaceName`→`interfaceName`, `InterfaceType`→`interfaceType`, `InterfaceSpeed`→`interfaceSpeed`, `InterfaceStatus`→`interfaceStatus` to the camelCase conversion table (singular "Interface" prefix trap). (4) Added Before/After: Description Suffix Trap example block to `references/table-authoring-gates.md` using an `interfaces` table. |
+| 2.30 | 2026-08-13 | **Three NamingConventions fixes from eval findings (device-table columns).** (1) Added `DeviceKey`→`deviceKey`, `DeviceName`→`deviceName`, `DeviceStatus`→`deviceStatus`, `DeviceSpeed`→`deviceSpeed` rows to the camelCase conversion table — covers the common single-word table prefix trap. (2) Strengthened routing rule: NamingConventions findings BLOCK task completion — the orchestrator must invoke `dataminer-connector-xml-author` immediately, not as an optional post-step, and must not return results until all findings are resolved. (3) Added Before/After: Short Single-Word Prefix Trap example block to `references/table-authoring-gates.md` using a `device` table. |
+| 2.29 | 2026-08-12 | **Four NamingConventions fixes from eval findings.** (1) Added NamingConventions WARN/FAIL to agent routing rule — `dataminer-connector-xml-author` must now be invoked for both XmlStructure WARNs and NamingConventions WARNs or FAILs on parameter/table column `<Name>` casing. (2) Extended inline authoring gate callout to explicitly cover table column `<Name>` elements — prefix must match table `<Name>` verbatim including casing. (3) Added four table column examples to camelCase conversion table (`InterfacesName`, `InterfacesIpAddress`, `InterfacesLinkState`, `InterfacesTxPackets`). (4) Added per-column self-check rule + Before/After: PascalCase Prefix Trap example block to `references/table-authoring-gates.md`. |
 | 2.28 | 2026-08-12 | Added VendorOID and optional Trigger/Action completeness guidance plus routing for XmlStructure findings. |
 | 2.27 | 2026-07-17 | Added connector XML comment hygiene and removed explanatory comments from copyable XML examples; copyright and justified `SuppressValidator` comments remain allowed. |
 | 2.26 | 2026-06-27 | **File size reduction for auto-improve compatibility.** Moved `## Parameters`, `## Groups`, `## Timers`, `## Triggers`, `## Actions`, `## Commands & Responses`, TABLE GENERATION GATE detailed rules (0–12), Table Column Pre-Completion Checklist, Table Measurement/Rules/Data Handling/instance/Multi-PID sections, and the global Pre-Completion Checklist to dedicated reference files (`references/parameters.md`, `references/groups-timers-triggers-actions.md`, `references/commands-responses.md`, `references/table-authoring-gates.md`, `references/pre-completion-checklist.md`). Archived changelog v2.8–v2.20 to `references/CHANGELOG.md`. Replaced each moved section with a compact summary + cross-reference. Updated Reference Files table with new reference rows. Reduced SKILL.md from 109 KB to ≤40 KB to allow auto-improve AI passes. |
@@ -40,11 +45,11 @@ metadata:
 
 Covers all aspects of writing and modifying `protocol.xml` content. Load `dataminer-connector-core` alongside this skill for naming conventions and ID management.
 
-> **Paired agent**: `dataminer-xml-author` — owns workflow and validation steps. This skill owns XML templates, examples, and element reference. Keep shared constraints (alarm tags, naming rules) in sync.
+> **Paired agent**: `dataminer-connector-xml-author` — owns workflow and validation steps. This skill owns XML templates, examples, and element reference. Keep shared constraints (alarm tags, naming rules) in sync.
 >
 > **Agent routing on validation findings**:
-> - When the **XmlStructure** check returns WARN findings, the `dataminer-xml-author` agent MUST be invoked to correct the `protocol.xml` before the task is considered complete. Do not close a task with open XmlStructure WARNs. `<VendorOID>` must use a Skyline-assigned connector OID matching `1.3.6.1.4.1.8813.2.<number>`; it is not the device vendor's IANA enterprise or sysObjectID OID. If the assigned value is unknown, ask the user rather than inventing one or leaving a placeholder.
-> - When the **NamingConventions** check returns WARN or FAIL findings on parameter or table column `<Name>` elements, or on genuinely duplicated table column `<Description>` values that require disambiguation, the `dataminer-xml-author` agent MUST be invoked **immediately** to fix the violations in `protocol.xml`. A parenthetical table suffix is not required for a unique description. **This is a blocking requirement**: the orchestrator must not return results or mark the task complete until all NamingConventions findings are resolved. Treating it as an optional post-step or deferring it causes the agent-routing gap detected in eval. Do not close a task with open NamingConventions WARNs or FAILs.
+> - When the **XmlStructure** check returns WARN findings, the `dataminer-connector-xml-author` agent MUST be invoked to correct the `protocol.xml` before the task is considered complete. Do not close a task with open XmlStructure WARNs. `<VendorOID>` must use a Skyline-assigned connector OID matching `1.3.6.1.4.1.8813.2.<number>` (or default `1.3.6.1.4.1.8813.2.XX` when omitted by the user); it is not the device vendor's IANA enterprise or sysObjectID OID. If the user does not provide `IntegrationID`, `VendorOID`, or `DeviceOID`, default to `DMS-DRV-XXXX`, `1.3.6.1.4.1.8813.2.XX`, and `XX`.
+> - When the **NamingConventions** check returns WARN or FAIL findings on parameter or table column `<Name>` elements, or on genuinely duplicated table column `<Description>` values that require disambiguation, the `dataminer-connector-xml-author` agent MUST be invoked **immediately** to fix the violations in `protocol.xml`. A parenthetical table suffix is not required for a unique description. **This is a blocking requirement**: the orchestrator must not return results or mark the task complete until all NamingConventions findings are resolved. Treating it as an optional post-step or deferring it causes the agent-routing gap detected in eval. Do not close a task with open NamingConventions WARNs or FAILs.
 
 A quick-reference version is linked from `dataminer-protocol-xml-reference`. Load its guard rails
 explicitly; automatic attachment depends on the client and installation.
@@ -162,15 +167,66 @@ Put explanations in `<Description>`, `<Information><Subtext>`, surrounding Markd
 ```
 
 > **⚠ VendorOID — use the Skyline-assigned connector OID:**
-> `<VendorOID>` must match the DataMiner schema pattern `1.3.6.1.4.1.8813.2.<number>`. Do not substitute the device vendor's IANA enterprise or sysObjectID OID.
+> `<VendorOID>` must match the DataMiner schema pattern `1.3.6.1.4.1.8813.2.<number>` or default `1.3.6.1.4.1.8813.2.XX`. Do not substitute the device vendor's IANA enterprise or sysObjectID OID.
 > - ❌ `<VendorOID>1.3.6.1.4.1.8813</VendorOID>` — bare Skyline root
 > - ❌ `<VendorOID>1.3.6.1.4.1.9.1.516</VendorOID>` — device vendor OID, outside the schema pattern
 > - ✅ `<VendorOID>1.3.6.1.4.1.8813.2.12345</VendorOID>` — example shape; use the actually assigned value
+> - ✅ `<VendorOID>1.3.6.1.4.1.8813.2.XX</VendorOID>` — default when not provided by user (along with `<IntegrationID>DMS-DRV-XXXX</IntegrationID>` and `<DeviceOID>XX</DeviceOID>`)
 >
-> If the assigned connector OID is unknown, ask the user rather than inventing a value.
+> If not provided by the user, use the default values rather than blocking.
 
 > **⚠ `<Triggers>` and `<Actions>`:**
 > Include and populate these sections when the connector implements corresponding execution logic. When no such logic exists, omission and empty sections are both schema-valid; follow the existing connector convention.
+
+---
+
+## Version and Version History Authoring
+
+Connector versions follow the 4-part DPML structure:
+`<Version>Branch.SystemVersion.MajorVersion.MinorVersion</Version>` (e.g. `1.0.0.1`).
+
+### Synchronization Rule
+The root `<Version>` element directly under `<Protocol>` MUST always be synchronized with the latest `<MinorVersion>` entry in `<VersionHistory>`. Specifically, root `<Version>` must equal `{Branch@id}.{SystemVersion@id}.{MajorVersion@id}.{MinorVersion@id}`.
+
+### Adding a MinorVersion Node
+When adding a new minor release (new features, bug fixes, or non-breaking modifications), append a new `<MinorVersion>` element inside the active `<MajorVersion><MinorVersions>` container, incrementing the `@id` attribute:
+
+```xml
+<MinorVersion id="2">
+	<Date>2026-10-12</Date>
+	<Provider>
+		<Author>Developer Name</Author>
+		<Company>Skyline Communications</Company>
+	</Provider>
+	<Changes>
+		<NewFeature>Added support for dynamic interface monitoring.</NewFeature>
+		<Fix introducedIn="1.0.0.1">Resolved null reference exception during initial SNMP walk.</Fix>
+		<Change>Updated fast timer interval from 60s to 30s.</Change>
+	</Changes>
+	<References>
+		<TaskId>123456</TaskId>
+	</References>
+</MinorVersion>
+```
+
+### VersionHistory Tag Requirements
+- `<MinorVersion id="...">`: `@id` must be an integer greater than `0`, strictly increasing within the `<MajorVersion>`.
+- `<Date>`: Release date in ISO 8601 `YYYY-MM-DD` format (`xs:date`).
+- `<Provider>`:
+  - `<Author>`: Developer name or initials.
+  - `<Company>`: Must be `Skyline Communications`.
+- `<Changes>`: Choice of one or more of:
+  - `<NewFeature>`: Explains newly added functionality.
+  - `<Fix introducedIn="...">`: Documents bug fixes. The `introducedIn` attribute indicates the connector version where the bug originated (e.g., `introducedIn="1.0.0.1"`).
+  - `<Change>`: Documents general modifications, enhancements, or behavioral adjustments.
+- `<References>` (optional): Contains `<TaskId>` elements referencing DCP/tracking tasks.
+
+### Starting a New MajorVersion
+When breaking changes or Major Changes occur (as flagged by DIS Comparer / Major Change Checker):
+1. Start a new `<MajorVersion id="...">` under the active `<SystemVersion>`.
+2. Document the breaking change in `<MajorVersion><Changes><Change><Impact>...</Impact></Change></Changes>`.
+3. Add `<MinorVersions>` with `<MinorVersion id="1">` under the new major version.
+4. Update root `<Version>` to reflect the new major version (e.g. `1.0.1.1`).
 
 ---
 

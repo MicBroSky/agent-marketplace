@@ -4,14 +4,15 @@ description: 'DataMiner protocol.xml validator prevention rules: concise authori
 argument-hint: 'Describe the protocol.xml area being authored or the validator category to prevent: params, tables, HTTP, QActions, groups, timers, tree controls, etc.'
 license: LicenseRef-Skyline-Agent-Marketplace
 metadata:
-  updated: 2026-09-27
-  version: 1.17
+  updated: 2026-10-07
+  version: 1.18
 ---
 
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.18 | 2026-10-07 | Updated metadata guidance: IntegrationID, VendorOID, and DeviceOID default to DMS-DRV-XXXX, 1.3.6.1.4.1.8813.2.XX, and XX when not provided. |
 | 1.17 | 2026-09-27 | Aligned packaged resource references and execution contracts. |
 | 1.16 | 2026-09-17 | Clarified that GetColumns/SetColumns are Protocol.Extension package methods, and preserved the secure HTTP guidance and normal-vs-first-release review profile boundary. |
 | 1.13 | 2026-07-17 | Added connector XML comment hygiene: forbid explanatory, TODO, debug, and design-note comments while preserving copyright and justified `SuppressValidator` comments. |
@@ -119,9 +120,9 @@ Load `dataminer-dis` as well when the user is working in Visual Studio with DIS 
 - Always include a valid root `Protocol` tag.
 - Always include valid `Name`, `Provider`, `Version`, `ElementType`, `Type`, and compliancy/minimum-version metadata expected by the validator.
 - For connector authoring, include and correctly fill these 10 project-required metadata tags: `Name`, `Description`, `Version`, `IntegrationID`, `Provider`, `Vendor`, `VendorOID`, `DeviceOID`, `ElementType`, and `VersionHistory`.
-- Ask the user for `Name`, `Version`, `IntegrationID`, `Vendor`, `VendorOID`, `DeviceOID`, and `ElementType` when they are not provided by the task or existing connector.
+- `IntegrationID`, `VendorOID`, and `DeviceOID` are optional for the user; if omitted, default to `<IntegrationID>DMS-DRV-XXXX</IntegrationID>`, `<VendorOID>1.3.6.1.4.1.8813.2.XX</VendorOID>`, and `<DeviceOID>XX</DeviceOID>`. Ask the user for `Name`, `Version`, `Vendor`, and `ElementType` when they are not provided by the task or existing connector.
 - `Provider` is always `Skyline Communications`.
-- If required metadata is unknown and XML must still be scaffolded, use obvious placeholders that cannot be mistaken for final values, such as `TODO_CONNECTOR_NAME`, `TODO_VERSION`, `TODO_INTEGRATION_ID`, `TODO_VENDOR`, `TODO_VENDOR_OID`, `TODO_DEVICE_OID`, and `TODO_ELEMENT_TYPE`.
+- If other required metadata is unknown and XML must still be scaffolded, use obvious placeholders that cannot be mistaken for final values, such as `TODO_CONNECTOR_NAME`, `TODO_VERSION`, `TODO_VENDOR`, and `TODO_ELEMENT_TYPE`.
 - Never silently invent realistic-looking metadata values. Either use user-provided values or obvious placeholders.
 - Trim `Name`, `Version`, and other metadata values.
 - Avoid invalid protocol name characters and invalid protocol name prefixes.
