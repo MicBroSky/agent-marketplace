@@ -20,6 +20,7 @@ skills:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.8 | 2026-10-20 | Enabled model invocation (`disable-model-invocation: false`) while keeping `user-invocable: false` to allow orchestrator delegation. |
 | 1.7 | 2026-09-28 | Restored the readable display name while retaining the stable filename ID. |
 | 1.6 | 2026-09-27 | Aligned the canonical agent invocation identifier. |
 | 1.5 | 2026-09-16 | Added repository/TOC/front-matter extraction and an explicit documentation completion gate for conditional Web Interface, Redundancy, and DVE pages. |

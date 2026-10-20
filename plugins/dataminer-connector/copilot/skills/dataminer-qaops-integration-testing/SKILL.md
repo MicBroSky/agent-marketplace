@@ -4,8 +4,8 @@ description: Create or wire MSTestV2 integration tests that run on QAOps DataMin
 argument-hint: 'Describe what to integration-test or migrate: e.g. "test if my Automation script stops all elements of protocol X", "add a QAOps Test Package for our Playwright tests", "migrate our integration tests to QAOps"'
 license: LicenseRef-Skyline-Agent-Marketplace
 metadata:
-  updated: 2026-09-18
-  version: 2.15
+  updated: 2026-10-02
+  version: 2.16
 ---
 
 > **Skill reference notice:** This skill refers to additional skills that are not included in this distribution: `dataminer-api`, `dataminer-automation-unit-testing`, `dataminer-dataapi`. If the task needs one, report the missing prerequisite and obtain it or explicitly narrow the task; do not claim the unsupported route is complete.
@@ -17,6 +17,7 @@ metadata:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.16 | 2026-10-02 | Added guidance to derive expected values from the MIB/real walk and to read exported DVE table columns as table cells. |
 | 2.15 | 2026-09-18 | Added specialized Automation fixture boundaries and explicit connector lifecycle handoff, artifact ownership, and final evidence gates for build, package, QAOps execution, publication, deployment, and verification. |
 | 2.14 | 2026-09-15 | Added specialized Automation fixture boundaries for GQI, SRM, User-Defined API, and Node Recovery runtime checks. |
 | 2.13 | 2026-08-07 | Added authoring guidance for supplementary runtime files: choose them instead of embedding large/per-run inputs in `.dmtest`, access them from PowerShell or C# through machine-level `QAOPS_SUPPLEMENTARY_FILES`, keep the path optional and diagnostics-rich, and route to `dataminer-qaops/references/supplementary-files.md`. |
@@ -212,6 +213,7 @@ The QAOps console output prints, per failed test, only `TestName - Fail: <assert
 - On outcome failures after running a script, append a plain tail of `SLAutomation.txt` (e.g. last 60 lines) read with the non-locking pattern from `system-state-preflight.md`. Keyword-anchored log windows truncated the real exception in practice — use a plain tail.
 - Never react to an unexplained failure by changing product/test logic on a guess: each fix-verify cycle costs a full QAOps run and a token use. Run duration scales with what executes — measured: ≈4.5 min for a filtered run, ≈55 min for a 657-test full suite (≈33 min quiet executable phase + ≈20 min row publishing). If the failure message does not name the cause, the next run's purpose is **better diagnostics**, not a speculative fix.
 - When a hypothesis can only be tested on the live system (e.g. which connection type element creation accepts), **batch every candidate variant into one run** — try/catch each variant and report all outcomes in one assertion message. One-variant-per-run debugging burned 4 runs in a measured session on a client-side constructor exception that one batched run would have settled.
+- **Derive expected values from the source, not from a plausible-looking number.** For SNMP connectors take expected values from the MIB object (for example a value read as a "serial" that was actually an uptime counter), and check them against the real walk and `protocol.xml`. Exported DVE table columns stay table columns in the child element: read them as table cells, not as standalone parameters. A wrong expectation looks identical to a connector bug in the QAOps output, so verify the expectation first.
 - **A `CompletedWithFailures` run with *no* per-test row means the harness failed, not a test** — `AssemblyInitialize` threw, the host crashed before writing a TRX, or the pipeline gated/bypassed `Invoke-DotNetTestAndPublishResults`. Fix the harness (see `references/test-package-wiring.md` → "Test Package Execution Pipeline" and `references/test-package-pipeline.md` → "Pipeline Integrity"); never add a throwing `dotnet test` before the helper, and do not spend QAOps runs reformatting a pipeline-level message — enrich the test's own assertion messages instead.
 
 ## Wiring and Shipping the Test Package

@@ -13,6 +13,13 @@ skills:
 - dataminer-toon-simulation
 ---
 
+## Changelog
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.5 | 2026-10-20 | Enabled model invocation (`disable-model-invocation: false`) while keeping `user-invocable: false` to allow orchestrator delegation. |
+| 1.4 | 2026-10-07 | Updated version and alignment. |
+
 # DataMiner Connector Simulation Generator
 
 Generate a `simulation.toon` file containing realistic mock data for every endpoint in a DataMiner connector. The output is a standalone simulation definition in [TOON format](https://toonformat.dev) designed for consumption by a dedicated simulator tool.

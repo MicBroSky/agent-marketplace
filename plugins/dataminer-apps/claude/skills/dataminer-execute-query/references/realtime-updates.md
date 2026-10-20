@@ -18,7 +18,7 @@ Real-time push requires **all three** of these. Get any one wrong and you receiv
 
 ## Overview
 
-Real-time query subscription happens over a single, persistent WebSocket:
+Real-time query subscription happens over a single, persistent WebSocket (steps 1–2 happen once per app, not per query):
 
 1. Bind the socket to the HTTP session (`SetConnectionID`).
 2. Subscribe to the event queue (`GetEvents`).
@@ -49,7 +49,7 @@ POST ../../API/v1/Internal.asmx/ObserveQuerySessionAsync
     "FetchLocal": true,
     "UseDynamicUnits": true,
     "EnableUpdates": true,
-    "QueryTag": ""
+    "QueryTag": "MyApp/LiveResources"
   }
 }
 ```
@@ -59,6 +59,7 @@ POST ../../API/v1/Internal.asmx/ObserveQuerySessionAsync
 | `connection` | **REQUIRED** (missing → HTTP 500, no events). Same connection GUID used for `SetConnectionID`. |
 | `clientSubscriptionID` | The inner subscription ID (`SUBSCRIPTION_ID`). See "The subscription-id channel" below. |
 | `options.EnableUpdates` | Must be `true`. |
+| `options.QueryTag` | Stable, non-empty app/query identifier, reused on refresh and reconnect. |
 | `query` | Identical structure to the one-shot query (descriptor + arguments envelope). |
 
 **Response:** `{ "d": { "ID": "<session-guid>", "Columns": [ ... ] } }`
@@ -95,7 +96,7 @@ There are two different subscription IDs in play, and conflating them is why a n
 | 7 | (repeat 5–6) | if `IsLast: false`, request the next page |
 | 8 | server→client | (socket stays open) push frames on every change (see below) |
 
-> Send `GetEvents` only after the `String` ack, and call `ObserveQuerySessionAsync` after sending `GetEvents`. Keep the socket open indefinitely; reconnect transparently on close.
+> Send `GetEvents` only after the `String` ack, and call `ObserveQuerySessionAsync` after sending `GetEvents`. For session lifecycle rules and the close-call payload, see [Closing query sessions and cleanup](../SKILL.md#closing-query-sessions-and-cleanup).
 
 ---
 
@@ -150,18 +151,19 @@ const QUERY_OPTIONS = {
   FetchLocal: true,
   UseDynamicUnits: true,
   EnableUpdates: true,          // REQUIRED for push
-  QueryTag: '',
+  QueryTag: 'MyApp/LiveResources',
 };
 
 // `query` = your GQI query object. `mapRow(cellObj)` -> UI model.
 // handlers = { onData(rows), onError(err) }. Returns an unsubscribe function.
 function observeQuery(connection, query, mapRow, { onData, onError } = {}) {
-  let stopped = false, ws = null, reconnectTimer = null, errorReported = false;
+  let stopped = false, ws = null, reconnectTimer = null;
+  let closeCurrentSession = async () => {}, reconnecting = false;
   const order = [];
   const byKey = new Map();
   let columns = [], idIndex = 0;
 
-  const reportError = (e) => { if (!errorReported && onError) { errorReported = true; onError(e); } };
+  const reportError = (error) => { if (onError) onError(error); else console.error(error); };
   const rowKey = (cells) => cells?.[idIndex]?.Value ?? cells?.[idIndex]?.DisplayValue ?? '';
   const cellsToObj = (cells) => {
     const o = {};
@@ -186,18 +188,34 @@ function observeQuery(connection, query, mapRow, { onData, onError } = {}) {
   };
   const removeRow = (key) => { if (byKey.delete(key)) { const i = order.indexOf(key); if (i >= 0) order.splice(i, 1); } };
 
-  const scheduleReconnect = () => {
-    if (stopped || reconnectTimer) return;
-    try { ws && ws.close(); } catch {}
-    reconnectTimer = setTimeout(() => { reconnectTimer = null; connect(); }, RECONNECT_DELAY_MS);
+  const scheduleReconnect = async () => {
+    if (stopped || reconnectTimer || reconnecting) return;
+    reconnecting = true;
+    try {
+      await closeCurrentSession();
+      try { ws && ws.close(); } catch {}
+      if (!stopped) reconnectTimer = setTimeout(() => { reconnectTimer = null; connect(); }, RECONNECT_DELAY_MS);
+    } catch (error) {
+      reportError(error);
+    } finally {
+      reconnecting = false;
+    }
   };
 
   function connect() {
     if (stopped) return;
     order.length = 0; byKey.clear(); columns = []; idIndex = 0;
     ws = new WebSocket(WS_URL);
-    const queueID = crypto.getRandomValues(new Uint32Array(1))[0];
-    let sessionId = null, opened = false;
+    const queueID = crypto.getRandomValues(new Uint32Array(1))[0] & 0x7fffffff;
+    let sessionId = null, opened = false, opening = null, closing = null, closed = false;
+
+    closeCurrentSession = () => {
+      closed = true;
+      return closing ??= (async () => {
+        if (opening) await opening.catch(() => {});
+        if (sessionId) await internalPost('CloseQuerySession', { connection, sessionID: sessionId });
+      })();
+    };
 
     const nextPage = () => ws.send(JSON.stringify({
       ClientSubscriptionID: 2, Method: 'NotifySubscription',
@@ -209,17 +227,18 @@ function observeQuery(connection, query, mapRow, { onData, onError } = {}) {
     })));
 
     ws.addEventListener('message', async (e) => {
+      if (stopped || closed) return;
       let msg; try { msg = JSON.parse(e.data); } catch { return; }
 
       if (msg.Type === 'String' && !opened) {
         opened = true;
         try {
           ws.send(JSON.stringify({ ClientSubscriptionID: 2, Method: 'GetEvents', Parameters: { queueID } }));
-          const info = await internalPost('ObserveQuerySessionAsync', {
+          opening = internalPost('ObserveQuerySessionAsync', {
             connection, queueID, clientSubscriptionID: SUBSCRIPTION_ID, query, options: QUERY_OPTIONS,
-          });
-          if (stopped) { try { ws.close(); } catch {} return; }
-          sessionId = info.ID;
+          }).then(info => { sessionId = info.ID; return info; });
+          const info = await opening;
+          if (stopped || closed) return;
           columns = info.Columns || [];
           const f = columns.findIndex((c) => c.Name === 'ID');
           idIndex = f >= 0 ? f : 0;
@@ -257,15 +276,23 @@ function observeQuery(connection, query, mapRow, { onData, onError } = {}) {
       }
     });
 
-    ws.addEventListener('error', () => reportError(new Error('WebSocket error during GQI subscription')));
-    ws.addEventListener('close', () => { if (!stopped) scheduleReconnect(); });
+    ws.addEventListener('error', () => {
+      if (stopped || closed) return;
+      reportError(new Error('WebSocket error during GQI subscription'));
+      scheduleReconnect();
+    });
+    ws.addEventListener('close', () => { if (!stopped && !closed) scheduleReconnect(); });
   }
 
   connect();
-  return function unsubscribe() {
+  return async function unsubscribe() {
     stopped = true;
     if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-    try { ws && ws.close(); } catch {}
+    try {
+      await closeCurrentSession();
+    } finally {
+      try { ws && ws.close(); } catch {}
+    }
   };
 }
 ```
@@ -274,7 +301,7 @@ function observeQuery(connection, query, mapRow, { onData, onError } = {}) {
 
 ## Reliability
 
-- **Keep one socket per subscription.** Do not close it after the initial pages — the push frames arrive on that same open socket.
+- **Share one WebSocket and one `GetEvents` stream across the app for its entire lifetime.** Give each GQI session a distinct inner `clientSubscriptionID` and keep that session active while pages or updates are needed. Closing one session must not unsubscribe the shared stream or close the WebSocket.
 - **Reconnect transparently** on close/error (re-run the full handshake; rebuild the working set from scratch).
 - **Do not re-fetch on a timer.** If you previously used repeated `OpenQuerySessionAsync` calls to keep data fresh, replace that pattern entirely; mixing the two wastes sessions and can mask the real-time path being misconfigured.
 - After a user-triggered action (e.g. an Automation Script that changes data), you do **not** need to manually re-query — the subscription pushes the resulting row updates automatically. Optimistic UI state (pending flags) can bridge the brief gap until the push lands.

@@ -7,7 +7,7 @@
 
 Skyline Communications' public marketplace for AI agents and reusable skills.
 
-- **Version:** `0.1.1`
+- **Version:** `0.1.2`
 - **Marketplace name:** `skyline-agent-marketplace`
 - **Repository:** `SkylineCommunications/agent-marketplace`
 - **Marketplace source:** `https://github.com/SkylineCommunications/agent-marketplace.git`

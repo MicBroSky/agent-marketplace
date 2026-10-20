@@ -7,10 +7,10 @@ tools:
 - execute
 - search
 argument-hint: "Describe the connector to create: e.g. 'SNMPv2 connector for Cisco Catalyst 9300', 'HTTP connector for REST API monitoring'"
-disable-model-invocation: true
+disable-model-invocation: false
 user-invocable: false
-version: "2.4"
-updated: 2026-10-07
+version: "2.5"
+updated: 2026-10-20
 handoffs:
 - label: Author XML
   agent: DataMiner Connector XML Author
@@ -26,6 +26,7 @@ handoffs:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.5 | 2026-10-20 | Enabled model invocation (`disable-model-invocation: false`) while keeping `user-invocable: false` to allow orchestrator delegation. |
 | 2.4 | 2026-10-07 | Made IntegrationID, VendorOID, and DeviceOID optional; use defaults DMS-DRV-XXXX, 1.3.6.1.4.1.8813.2.XX, XX when omitted. |
 | 2.3 | 2026-10-07 | Updated handoff target to DataMiner Connector XML Author. |
 | 2.2 | 2026-09-28 | Restored the readable display name and updated name-based handoffs without changing file IDs. |

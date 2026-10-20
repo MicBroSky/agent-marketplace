@@ -9,6 +9,7 @@ description: "Author and modify DPML XML content in DataMiner connector protocol
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.27 | 2026-10-20 | Enabled model invocation (`disable-model-invocation: false`) while keeping `user-invocable: false` to allow orchestrator delegation. |
 | 2.26 | 2026-10-07 | Renamed agent display name to DataMiner Connector XML Author and updated handoff targets. |
 | 2.25 | 2026-10-05 | Added gate for discrete parameters with numeric backends (double) for pre-known values to support alarming and trending. |
 | 2.24 | 2026-10-02 | Added inline SNMP write, poll-group, timer-startup, and action-priority gates. |

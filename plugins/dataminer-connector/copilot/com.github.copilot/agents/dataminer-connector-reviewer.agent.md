@@ -7,10 +7,10 @@ tools:
 - execute
 - send_session_message
 argument-hint: "Describe the review and profile: e.g. 'review my connector normally', 'run the first-release profile with lifecycle and evidence paths', 'audit QAction code quality', 'check XML structure and naming'"
-disable-model-invocation: true
+disable-model-invocation: false
 user-invocable: false
-version: "2.3"
-updated: 2026-10-16
+version: "2.4"
+updated: 2026-10-20
 handoffs:
 - label: Fix XML Issues
   agent: DataMiner Connector XML Author
@@ -26,6 +26,7 @@ handoffs:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.4 | 2026-10-20 | Enabled model invocation (`disable-model-invocation: false`) while keeping `user-invocable: false` to allow orchestrator delegation. |
 | 2.3 | 2026-10-16 | Added review checks for .NET Framework 4.8 (`net48`), C# 7.3 language compliance (flagging C# 8/9+ syntax and `<LangVersion>` overrides), and zero-error solution compilation. |
 | 2.2 | 2026-10-07 | Updated handoff targets and recommendations to DataMiner Connector XML Author and DataMiner Connector QAction Writer. |
 | 2.1 | 2026-09-28 | Restored the readable display name and updated name-based handoffs without changing file IDs. |

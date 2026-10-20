@@ -7,10 +7,10 @@ tools:
 - search
 - execute
 argument-hint: "Describe the QAction task: e.g. 'parse JSON response and fill table', 'write QAction for SNMP trap processing', 'implement table cleanup logic'"
-disable-model-invocation: true
+disable-model-invocation: false
 user-invocable: false
-version: "2.17"
-updated: 2026-10-16
+version: "2.18"
+updated: 2026-10-20
 handoffs:
 - label: Write Tests
   agent: DataMiner Connector Test Writer
@@ -26,6 +26,7 @@ handoffs:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.18 | 2026-10-20 | Enabled model invocation (`disable-model-invocation: false`) while keeping `user-invocable: false` to allow orchestrator delegation; enforced CLI-based helper generation (`qaction-helper-generation`) and prohibited manual helper synthesis. |
 | 2.17 | 2026-10-16 | Enforced .NET Framework 4.8 (`net48`) and C# 7.3 for all connector QActions (forbidding C# 8/9+ syntax and `<LangVersion>` overrides) and added a hard zero-error compilation gate before returning code or creating a PR. |
 | 2.16 | 2026-10-07 | Renamed agent display name to DataMiner Connector QAction Writer and updated reference paths. |
 | 2.15 | 2026-09-28 | Restored the readable display name and updated name-based handoffs without changing file IDs. |
@@ -62,7 +63,7 @@ changes, not to take ownership.
 
    > ⚠️ **Connector Map guard**: If you were invoked **without** a Connector Map AND the connector has **>20 parameters** (count `<Param>` occurrences in protocol.xml), STOP and request a Connector Map from the orchestrator before writing code. Improvising IDs against a large connector causes ID collisions, missed columns, and rework. For small connectors (≤20 parameters) reading protocol.xml directly is fine. See the Connector Map template in `dataminer-connector-orchestrator/references/plan-templates.md` for the expected map structure.
 
-   **Decide whether QAction_Helper is relevant** — inspect the existing project references and source. If existing or planned code consumes generated `Parameter`, `SLProtocolExt`, table, or row members and the XML change affects those members, load `dataminer-qaction-helper-generator`, refresh the helper, and build. If the solution is intentionally helper-free or the generated surface is unaffected, record that no refresh is required and continue.
+   **Decide whether QAction_Helper is relevant** — inspect the existing project references and source. If existing or planned code consumes generated `Parameter`, `SLProtocolExt`, table, or row members and the XML change affects those members, load `dataminer-qaction-helper-generator`, refresh the helper using the official CLI tool (`qaction-helper-generation` or `dotnet tool run qaction-helper-generation`), and build. NEVER manually hand-synthesize or write `QAction_Helper.cs` by hand. If the solution is intentionally helper-free or the generated surface is unaffected, record that no refresh is required and continue.
 3. **Write the C# code (`.NET Framework 4.8` / `C# 7.3` ONLY)**: Implement with proper patterns — try/catch wrapper, bulk SLProtocol calls, `CultureInfo.InvariantCulture` for parsing, meaningful logging.
    - **Target `.NET Framework 4.8` (`<TargetFramework>net48</TargetFramework>`) and `C# 7.3` (`<LangVersion>7.3</LangVersion>`) strictly.**
    - **NEVER use C# 8.0, C# 9.0, or newer syntax** (`CS8370`): no target-typed `new()`, no file-scoped `namespace X;`, no `record` or `init`, no switch expressions (`x switch { ... }`), no `is not null` / relational pattern combinators, no `using var` declarations without braces, no `??=`, no nullable reference types (`string?`, `<Nullable>enable</Nullable>`), and no index/range operators (`^1`, `1..3`).

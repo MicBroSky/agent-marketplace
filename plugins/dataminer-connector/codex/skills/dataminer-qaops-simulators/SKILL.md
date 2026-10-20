@@ -4,14 +4,15 @@ description: 'Device simulators for DataMiner QAOps integration tests: SNMP (Sky
 argument-hint: 'Describe what device communication needs to be simulated: e.g. "simulate an SNMP device for my integration test", "create a WebSocket simulator for testing element creation", "add a TCP serial responder for a QAOps data-flow test"'
 license: LicenseRef-Skyline-Agent-Marketplace
 metadata:
-  updated: 2026-08-07
-  version: 1.3
+  updated: 2026-10-02
+  version: 1.4
 ---
 
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.4 | 2026-10-02 | Corrected the QADeviceSimulator launch contract: pass the bare file name of an XML in `C:\QASNMPSimulations` (a full path silently starts zero simulations), `/d` only disables logging, SNMP v1/v2c/v3 are supported, and `SnmpSimulatorSession` now polls for the UDP bind instead of sleeping. Added the raw-wire probe and DaaS elevation notes. Verified by decompiling QADeviceSimulator and on QAOps DaaS. |
 | 1.3 | 2026-08-07 | Added supplementary-file delivery for simulator assets: pass variable/large simulation XML, data, or prebuilt simulator executables with `--supplementary-file`, then resolve them through machine-level `QAOPS_SUPPLEMENTARY_FILES` in C# or PowerShell. Kept packaging as the default for small stable helpers that belong to the test artifact. |
 | 1.2 | 2026-06-26 | Updated the SNMP and WebSocket usage-example tests to also carry the baseline `[TestCategory("IntegrationTest")]` (additive with the feature-specific `[TestCategory("IDmsElementCreation")]`), matching the mandatory-category rule in `dataminer-qaops-integration-testing` → `references/authoring-test-project.md`. |
 | 1.1 | 2026-06-26 | Clarified at the top of "QAOps DaaS Loopback Limitations" that the DaaS target is a **Windows** DataMiner and the loopback/elevation limits are networking constraints, **not** a Linux host — Windows-only connector behavior is available; do not generalize a loopback limit into "the target is Linux". |
@@ -79,17 +80,20 @@ DataMiner ships a device simulator tool on every DMA since 10.1.5:
 C:\Skyline DataMiner\Tools\QADeviceSimulator\QADeviceSimulator.exe
 ```
 
-It supports **SNMP (SNMPv1) and HTTP** simulation. Serial/smart-serial/WebSocket are **not** supported — use `TcpDeviceSimulator` or a packaged console exe for those.
+It supports **SNMP (v1, v2c and v3) and HTTP** simulation. Serial/smart-serial/WebSocket are **not** supported — use `TcpDeviceSimulator` or a packaged console exe for those.
 
-**Headless CLI usage:**
+**Unattended CLI usage:**
 
 ```text
-QADeviceSimulator.exe "<simulation-file.xml>" /d
+QADeviceSimulator.exe MySimulation.xml            # one simulation
+QADeviceSimulator.exe SimA.xml SimB.xml           # several simulations in one process
 ```
 
-- Simulation file must be placed in `C:\QASNMPSimulations` (created automatically on first start).
-- `/d` disables logging for headless/unattended use.
-- The exe requires elevation (requireAdministrator manifest). If elevation fails on a DaaS machine, the test must report `Assert.Inconclusive(...)` rather than failing.
+- Pass the **bare file name** of an XML that is already in `C:\QASNMPSimulations` (created automatically on first start). A full or quoted path matches no simulation entry, so **zero simulations start and no UDP port is bound**, while the process stays alive.
+- `/d` only disables logging; it is not a headless switch (the GUI always starts and auto-starts the named simulations). Omit it so `C:\QASNMPSimulations\Logging\Log.txt` stays available for diagnostics.
+- The exe requires elevation (requireAdministrator manifest). On QAOps DaaS the test host is already elevated, so `runas` is silent; local runs show a UAC prompt. If elevation fails, the test must report `Assert.Inconclusive(...)` rather than failing.
+- **Readiness:** a running process is not a health signal. Poll `IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners()` for the agent port (30 s budget) and fail fast, pointing at the simulator log. `SnmpSimulatorSession` below does this.
+- **Diagnosis:** before creating any element, send a raw SNMP GET to the simulator port. A timeout means the simulator is not listening; an answer means look at the connector or element.
 
 **Simulation file format:**
 

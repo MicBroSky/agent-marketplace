@@ -6,11 +6,18 @@ tools:
 - edit
 - search
 argument-hint: Point at a connector solution to generate a simulation file, e.g. 'generate simulation for this SNMP connector' or 'create HTTP simulation data'
-disable-model-invocation: true
+disable-model-invocation: false
 user-invocable: false
-version: "1.4"
-updated: 2026-10-07
+version: "1.5"
+updated: 2026-10-20
 ---
+
+## Changelog
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.5 | 2026-10-20 | Enabled model invocation (`disable-model-invocation: false`) while keeping `user-invocable: false` to allow orchestrator delegation. |
+| 1.4 | 2026-10-07 | Updated version and alignment. |
 
 # DataMiner Connector Simulation Generator
 

@@ -7,10 +7,10 @@ tools:
 - search
 - execute
 argument-hint: "Describe what to test: e.g. 'write tests for QAction 100 JSON parsing', 'test table fill logic in QAction 50', 'set up test project for my connector', 'create QAOps integration tests'"
-disable-model-invocation: true
+disable-model-invocation: false
 user-invocable: false
-version: "1.12"
-updated: 2026-10-16
+version: "1.13"
+updated: 2026-10-20
 handoffs:
 - label: Run Validator
   agent: DataMiner Connector Validator
@@ -22,6 +22,7 @@ handoffs:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.13 | 2026-10-20 | Enabled model invocation (`disable-model-invocation: false`) while keeping `user-invocable: false` to allow orchestrator delegation; added clean MSTest scaffolding instructions. |
 | 1.12 | 2026-10-16 | Enforced .NET Framework 4.8 (`net48`) / C# 7.3 compatibility for QAction projects and added the hard zero-error compilation gate before returning code or opening a PR. |
 | 1.11 | 2026-10-06 | Added QAOps support escalation guidance directing users to support.boost@skyline.be. |
 | 1.10 | 2026-10-02 | Corrected the unit testing framework package ID to `Skyline.DataMiner.Utils.UnitTestingFramework.Protocol`. |
@@ -47,7 +48,7 @@ Load the `dataminer-connector-core`, `dataminer-qaction`, and `dataminer-unit-te
 
 1. **Read protocol.xml**: Understand the parameters, tables, column PIDs, and QAction triggers relevant to the test target.
 2. **Read the QAction code**: Understand the logic — what inputs it reads, what outputs it sets, what tables it fills, and what error handling it performs.
-3. **Locate or create the test project**: Check if a test project (`QAction_Tests`) exists. If not, create one with the correct NuGet references and project references.
+3. **Locate or create the test project**: Check if a test project (`QAction_Tests`) exists. If not, create one: `dotnet new mstest -n QAction_Tests -o Tests/QAction_Tests -f net48`, remove the default template file (`Test1.cs` or `UnitTest1.cs`), and add project references to the target QAction project(s) and the `Skyline.DataMiner.Utils.UnitTestingFramework.Protocol` package.
 4. **Verify private NuGet packages**: After creating or locating the test project, run `dotnet restore` on the test project. If restore fails for packages hosted on the private GitHub NuGet store (e.g., `Skyline.DataMiner.Utils.UnitTestingFramework.Protocol`), check whether the GitHub Packages NuGet source is configured by running `dotnet nuget list source`. If the source is missing or authentication fails, **ask the user** to manually configure the private NuGet source and restore the package (e.g., `dotnet nuget add source` with credentials, or install via Visual Studio). **Do not proceed to writing tests until the restore succeeds** — wait for the user to confirm the package is available, then retry `dotnet restore` to verify.
 5. **Write test classes**: Use non-generic `SLProtocolMock` for helper-free QActions. Use `SLProtocolMock<ConcreteSLProtocolExt>` only when the target code consumes a current generated helper. Follow the Arrange/Act/Assert pattern.
 6. **Cover key scenarios**:

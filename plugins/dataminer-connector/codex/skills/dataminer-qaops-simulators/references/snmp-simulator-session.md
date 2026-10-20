@@ -1,6 +1,6 @@
 # SNMP Simulator Session Reference
 
-`SnmpSimulatorSession` wraps the Skyline QADeviceSimulator to simulate an SNMPv1 device on a dynamic UDP port. Drop this into `IntegrationTests/TestingUtilities/`.
+`SnmpSimulatorSession` wraps the Skyline QADeviceSimulator to simulate an SNMP device (v1, v2c or v3) on a dynamic UDP port. Drop this into `IntegrationTests/TestingUtilities/`.
 
 ## Full Implementation
 
@@ -17,7 +17,7 @@ namespace IntegrationTests.TestingUtilities
     using System.Threading;
 
     /// <summary>
-    /// Wraps the Skyline QADeviceSimulator for headless SNMPv1 simulation inside a QAOps test.
+    /// Wraps the Skyline QADeviceSimulator for headless SNMP simulation inside a QAOps test.
     /// Requires elevation; if elevation is denied, <see cref="TryStart"/> returns null and the
     /// caller must call <see cref="Microsoft.VisualStudio.TestTools.UnitTesting.Assert.Inconclusive"/>.
     /// Always dispose — the simulation file is removed and the process is killed on Dispose.
@@ -82,7 +82,9 @@ namespace IntegrationTests.TestingUtilities
             var psi = new ProcessStartInfo
             {
                 FileName = SimulatorExe,
-                Arguments = $"\"{simFile}\" /d",
+                // Bare file name only: a full or quoted path matches no simulation entry and silently
+                // starts zero simulations. Do not pass /d (it only disables logging).
+                Arguments = Path.GetFileName(simFile),
                 UseShellExecute = true,
                 Verb = "runas",
                 CreateNoWindow = true,
@@ -100,13 +102,19 @@ namespace IntegrationTests.TestingUtilities
                 return null;
             }
 
-            // Give the simulator a moment to bind the UDP port
-            Thread.Sleep(1500);
+            // A live process is not a health signal: wait for the UDP port to actually be bound.
+            bool bound = PollUntil(
+                () => proc.HasExited || IsUdpPortBound(udpPort),
+                TimeSpan.FromSeconds(30));
 
-            if (proc.HasExited)
+            if (proc.HasExited || !bound)
             {
+                string reason = proc.HasExited
+                    ? $"QADeviceSimulator exited with code {proc.ExitCode}."
+                    : $"UDP port {udpPort} was not bound within 30 s.";
+                try { if (!proc.HasExited) proc.Kill(); } catch { /* best effort */ }
                 File.Delete(simFile);
-                failureReason = $"QADeviceSimulator exited immediately with code {proc.ExitCode}.";
+                failureReason = reason + $" See {SimulatorDir}\\Logging\\Log.txt.";
                 return null;
             }
 
@@ -147,6 +155,36 @@ namespace IntegrationTests.TestingUtilities
             sb.AppendLine("  </Definitions>");
             sb.AppendLine("</Simulation>");
             return sb.ToString();
+        }
+
+        private static bool IsUdpPortBound(int port)
+        {
+            foreach (IPEndPoint ep in System.Net.NetworkInformation.IPGlobalProperties
+                .GetIPGlobalProperties().GetActiveUdpListeners())
+            {
+                if (ep.Port == port)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool PollUntil(Func<bool> condition, TimeSpan timeout)
+        {
+            DateTime deadline = DateTime.UtcNow + timeout;
+            while (DateTime.UtcNow < deadline)
+            {
+                if (condition())
+                {
+                    return true;
+                }
+
+                Thread.Sleep(250);
+            }
+
+            return condition();
         }
 
         /// <summary>Picks a free UDP port on loopback (best-effort).</summary>
@@ -209,5 +247,12 @@ public void Create_SnmpElement_PollsSimulatedSysDescr()
 
 - `TryStart` uses `UseShellExecute = true; Verb = "runas"` — this is required for elevation but means stdout/stderr from the process are not capturable from code.
 - Always use unique simulation file names (`simulationName + DateTime.UtcNow.Ticks`) to avoid collisions if a previous test leaked a file.
-- The simulator writes SNMPv1 responses only. For SNMPv2c/v3 tests use an `SnmpV2Connection`/`SnmpV3Connection` element that polls the same simulator (the simulator responds to any version request on the bound port, though the response community/auth is simulator-default).
+- The simulator supports SNMP v1, v2c and v3 (including GetBulk). A real captured walk with `SNMPVersion="2"` answers v1 and v2c GETs unmodified, so no downgrade step is needed. Use an `SnmpV1Connection`/`SnmpV2Connection`/`SnmpV3Connection` element that matches the connector.
+- Never use "process is running" as readiness. A wrong launch argument leaves the process alive with no UDP port bound (symptom: the element is Active but parameters stay empty, and a raw SNMP GET fails with `SocketException: An existing connection was forcibly closed`). `TryStart` therefore polls `GetActiveUdpListeners()` and fails fast.
+- Keep logging enabled (no `/d`): `C:\QASNMPSimulations\Logging\Log.txt` records `Simulation started ... Listening for <ip>:<port>` and is the only diagnostic channel.
+- On QAOps DaaS the test host is already elevated, so `Verb = "runas"` starts silently. Local runs show a UAC prompt.
+
+## Raw-wire probe (before creating any element)
+
+To split the fault domain in half, send an SNMP GET to the simulator with a client library (for example `Lextm.SharpSnmpLib`) before creating the DataMiner element. If it times out, the simulator is not listening (launch argument, file placement, port conflict). If it answers, investigate the connector or element instead.
 - The DaaS QAOps DataMiner machine ships the Skyline Device Simulator with DataMiner 10.1.5+. If a specific DataMiner version below 10.1.5 is targeted, always `Inconclusive` instead of `Fail`.

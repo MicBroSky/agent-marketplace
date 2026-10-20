@@ -23,6 +23,7 @@ skills:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.13 | 2026-10-20 | Enabled model invocation (`disable-model-invocation: false`) while keeping `user-invocable: false` to allow orchestrator delegation. |
 | 1.12 | 2026-10-07 | Updated handoffs to DataMiner Connector XML Author and DataMiner Connector QAction Writer. |
 | 1.11 | 2026-09-28 | Restored the readable display name and updated name-based handoffs without changing file IDs. |
 | 1.10 | 2026-09-27 | Aligned invocation identity and read-only diagnostic/coordination boundaries. |

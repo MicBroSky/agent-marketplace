@@ -1,6 +1,6 @@
 {
   "name": "dataminer-apps",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Build static frontend applications for deployment inside Skyline DataMiner.",
   "skills": "./skills/"
 }

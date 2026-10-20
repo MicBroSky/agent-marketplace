@@ -6,10 +6,10 @@ tools:
 - search
 - execute
 argument-hint: "Describe the problem: e.g. 'table not populating', 'parameter stuck at -1', 'polling timeout on group 5', 'QAction not triggering'"
-disable-model-invocation: true
+disable-model-invocation: false
 user-invocable: false
-version: "1.12"
-updated: 2026-10-07
+version: "1.13"
+updated: 2026-10-20
 handoffs:
 - label: Author XML
   agent: DataMiner Connector XML Author
@@ -25,6 +25,7 @@ handoffs:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.13 | 2026-10-20 | Enabled model invocation (`disable-model-invocation: false`) while keeping `user-invocable: false` to allow orchestrator delegation. |
 | 1.12 | 2026-10-07 | Updated handoffs to DataMiner Connector XML Author and DataMiner Connector QAction Writer. |
 | 1.11 | 2026-09-28 | Restored the readable display name and updated name-based handoffs without changing file IDs. |
 | 1.10 | 2026-09-27 | Aligned invocation identity and read-only diagnostic/coordination boundaries. |

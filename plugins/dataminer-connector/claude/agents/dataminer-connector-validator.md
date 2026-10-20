@@ -17,6 +17,7 @@ skills:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.12 | 2026-10-20 | Enabled model invocation (`disable-model-invocation: false`) while keeping `user-invocable: false` to allow orchestrator delegation; added programmatic JSON extraction guidance to avoid paginated full-file reads. |
 | 2.11 | 2026-10-07 | Updated handoffs to DataMiner Connector XML Author and DataMiner Connector QAction Writer. |
 | 2.10 | 2026-09-28 | Restored the readable display name and updated name-based handoffs without changing file IDs. |
 | 2.9 | 2026-09-27 | Made validation report-only, isolated diagnostics and coordination writes, and aligned the invocation name. |
@@ -49,7 +50,7 @@ Load the `dataminer-validation` skill and
    dataminer-validator validate protocol-solution --solution-path "<disposable-copy-solution>.sln|.slnx" --output-directory "<external-output-directory>" -of JSON
    ```
    (Use whichever extension the found solution actually has — the CLI accepts both.)
-3. **Read results**: Open the generated JSON file from the output directory.
+3. **Read and extract results**: Open the generated JSON file or run a compact extraction command (e.g. Python or PowerShell script extracting `Code`, `Severity`, `Description`, `Target`) to extract the problems list directly rather than performing multi-page paginated reads of large JSON files.
 4. **Summarize**: Group results by severity (Critical → Major → Minor → Warning). For each issue report:
    - Validator code (e.g. `2.5.1`)
    - Affected element/parameter

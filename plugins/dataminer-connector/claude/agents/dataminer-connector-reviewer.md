@@ -22,6 +22,7 @@ skills:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.4 | 2026-10-20 | Enabled model invocation (`disable-model-invocation: false`) while keeping `user-invocable: false` to allow orchestrator delegation. |
 | 2.3 | 2026-10-16 | Added review checks for .NET Framework 4.8 (`net48`), C# 7.3 language compliance (flagging C# 8/9+ syntax and `<LangVersion>` overrides), and zero-error solution compilation. |
 | 2.2 | 2026-10-07 | Updated handoff targets and recommendations to DataMiner Connector XML Author and DataMiner Connector QAction Writer. |
 | 2.1 | 2026-09-28 | Restored the readable display name and updated name-based handoffs without changing file IDs. |

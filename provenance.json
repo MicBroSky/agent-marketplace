@@ -1,14 +1,14 @@
 {
-  "manifestVersion": "0.1.1",
+  "manifestVersion": "0.1.2",
   "marketplace": "skyline-agent-marketplace",
   "sourceRepository": "SkylineCommunications/.github-private",
-  "sourceCommitSha": "962e8cabf52151196fd85beb55cd6e8be31a6bff",
-  "builtAtUtc": "2026-10-16T17:08:26.0215275+00:00",
+  "sourceCommitSha": "cd810e5cf8ebfa90d95de8554c1c05bd4952a401",
+  "builtAtUtc": "2026-10-20T20:10:09.9574094+00:00",
   "publisherToolVersion": "1.0.0.0",
   "plugins": [
     {
       "id": "dataminer-apps",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "path": "plugins/dataminer-apps",
       "rootAgents": [
         "dataminer-app-builder"
@@ -29,11 +29,11 @@
         "dataminer-debug-issues"
       ],
       "instructions": null,
-      "fingerprint": "6d324014b8d563980dd6b086774e76cbec9e41a3a671d49ec61f1ecfc5412ee2"
+      "fingerprint": "0dfe881018fb96796705f93be16d1167b7fd4d526f7ac8e9b84fa80e95adff16"
     },
     {
       "id": "dataminer-connector",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "path": "plugins/dataminer-connector",
       "rootAgents": [
         "dataminer-connector-orchestrator"
@@ -93,7 +93,7 @@
           "skill": "dataminer-qaction"
         }
       ],
-      "fingerprint": "5565c59b9924bfc1fe7291f96e2a29d292902a0206fd1aca52981c5c9354398b"
+      "fingerprint": "e80761d7d80367e3ba6ccd9b587e75868143ac7bf4ba84de622741bfbe3ef301"
     }
   ]
 }

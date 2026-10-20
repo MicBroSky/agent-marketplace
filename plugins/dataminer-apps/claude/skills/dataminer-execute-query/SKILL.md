@@ -4,8 +4,8 @@ description: Execute GQI queries in a DataMiner frontend application using OpenQ
 license: LicenseRef-Skyline-Agent-Marketplace
 user-invocable: true
 metadata:
-  updated: 2026-09-11
-  version: 1.0
+  updated: 2026-10-01
+  version: 1.1
 ---
 
 # DataMiner Execute Query Skill
@@ -25,12 +25,13 @@ For **real-time (push) updates** — subscribing to live row changes via `Observ
 
 ## Overview
 
-GQI query execution happens in two phases:
+GQI query execution happens in three phases:
 
 1. **Open a session** — HTTP POST to `OpenQuerySessionAsync` with the hardcoded query object. Returns a session ID and column metadata.
 2. **Fetch pages** — Request row data pages via WebSocket using `GetNextQuerySessionPage` until `IsLast: true`.
+3. **Close the session** — Non-live sessions close automatically after the last page; close unfinished or live sessions with `CloseQuerySession` (see [Closing query sessions and cleanup](#closing-query-sessions-and-cleanup)).
 
-Both phases share a single WebSocket connection. For WebSocket connection setup (URL, `SetConnectionID`, keep-alive, `ClientSubscriptionID` management), see the **dataminer-api** skill (`references/websocket-setup.md`). The `connection` string comes from the session bootstrap call described in the **dataminer-api** skill.
+All queries share the app's single WebSocket and one `GetEvents` queue for the app's entire lifetime; each session is identified by its own inner `clientSubscriptionID` (see `references/websocket-protocol.md`). Closing a session is an HTTP call, not a socket close. For WebSocket connection setup (URL, `SetConnectionID`, keep-alive, `ClientSubscriptionID` management), see the **dataminer-api** skill (`references/websocket-setup.md`). The `connection` string comes from the session bootstrap call described in the **dataminer-api** skill.
 
 See `references/websocket-protocol.md` for GQI-specific message formats (queue events and row data pages).
 
@@ -52,7 +53,7 @@ POST ../../API/v1/Internal.asmx/OpenQuerySessionAsync
     "FetchLocal": true,
     "UseDynamicUnits": true,
     "EnableUpdates": false,
-    "QueryTag": ""
+    "QueryTag": "MyApp/Resources"
   }
 }
 ```
@@ -67,7 +68,7 @@ POST ../../API/v1/Internal.asmx/OpenQuerySessionAsync
 | `FetchLocal` | bool | `true` = data is fetched on the DMA itself (required for most use cases). |
 | `UseDynamicUnits` | bool | `true` = units adapt to the magnitude of the value (e.g. KB → MB → GB). |
 | `EnableUpdates` | bool | `false` = one-shot fetch. `true` = live updates pushed via WebSocket as data changes. Use `false` for most production apps. |
-| `QueryTag` | string | Short identifier to help trace the source of a query when troubleshooting — e.g. `"MyApp/Resources"` or `"MyApp/Q1"`. |
+| `QueryTag` | string | Always set a stable, non-empty identifier for the app and logical query, e.g. `"MyApp/Resources"`. Reuse it across refreshes and reconnects so sessions can be traced. Do not include credentials or personal data. |
 
 ---
 
@@ -122,12 +123,15 @@ POST ../../API/v1/Internal.asmx/OpenQuerySessionAsync
 | 5 | client→server | `GetNextQuerySessionPage` — request first page of rows |
 | 6 | server→client | `DMAEvent` with `Message.Rows` — accumulate; check `Message.IsLast` |
 | 7 | (repeat 5–6) | if `IsLast: false`, send another `GetNextQuerySessionPage` |
+| 8 | server | Automatically closes the non-live session after `IsLast: true` |
 
-> `GetEvents` (step 3) is what creates the server-side queue — always send it before calling `OpenQuerySessionAsync`. Generate one `queueID` per app session and reuse it across all queries on the same connection.
+> `GetEvents` (step 3) is what creates the server-side queue — always send it before calling `OpenQuerySessionAsync`. Generate one `queueID` per app session and reuse it across all queries on the same connection. It must fit a signed 32-bit integer; mask a random `Uint32` with `0x7fffffff` as in the example.
 
 ---
 
 ## Production code example
+
+The Web API automatically closes this one-shot session after the final page. Apply the cleanup rules below when adding cancellation, lazy loading, or error handling.
 
 ```javascript
 const INTERNAL_API = `${window.location.protocol}//${window.location.host}/API/v1/Internal.asmx`;
@@ -147,10 +151,11 @@ async function internalPost(method, body) {
 const QUERY = { /* discovered query object goes here */ };
 
 // One queue ID per app session — reused for every query on this connection
-const QUEUE_ID = crypto.getRandomValues(new Uint32Array(1))[0];
+const QUEUE_ID = crypto.getRandomValues(new Uint32Array(1))[0] & 0x7fffffff;
 
 async function fetchData(connection) {
   let subID = 1;
+  const subscriptionID = 7;
 
   return new Promise((resolve, reject) => {
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -172,7 +177,7 @@ async function fetchData(connection) {
         const sessionInfo = await internalPost('OpenQuerySessionAsync', {
           connection,
           queueID: QUEUE_ID,
-          clientSubscriptionID: subID++,
+          clientSubscriptionID: subscriptionID,
           query: QUERY,
           options: {
             OptimizationType: 1,
@@ -187,9 +192,9 @@ async function fetchData(connection) {
         sessionId = sessionInfo.ID;
         columns = sessionInfo.Columns;
         ws.send(JSON.stringify({
-          ClientSubscriptionID: subID++,
+          ClientSubscriptionID: 2,
           Method: 'NotifySubscription',
-          Parameters: { clientSubscriptionID: subID++, method: 'GetNextQuerySessionPage', data: { sessionID: sessionId, pageSize: 50 } }
+          Parameters: { clientSubscriptionID: subscriptionID, method: 'GetNextQuerySessionPage', data: { sessionID: sessionId, pageSize: 50 } }
         }));
       }
       if (msg.Type === 'DMAEvent' && msg.Data?.Message?.Rows && sessionId) {
@@ -201,9 +206,9 @@ async function fetchData(connection) {
           ));
         } else {
           ws.send(JSON.stringify({
-            ClientSubscriptionID: subID++,
+            ClientSubscriptionID: 2,
             Method: 'NotifySubscription',
-            Parameters: { clientSubscriptionID: subID++, method: 'GetNextQuerySessionPage', data: { sessionID: sessionId, pageSize: 50 } }
+            Parameters: { clientSubscriptionID: subscriptionID, method: 'GetNextQuerySessionPage', data: { sessionID: sessionId, pageSize: 50 } }
           }));
         }
       }
@@ -218,6 +223,39 @@ async function fetchData(connection) {
 
 ## Running multiple queries in parallel
 
-Run **independent** queries concurrently over the single shared socket: open every session up front by issuing their `OpenQuerySessionAsync` calls without awaiting one before starting the next. Keep the one WebSocket and one `queueID`; give each in-flight query a **distinct fixed inner `clientSubscriptionID`** (reused in its `OpenQuerySessionAsync` body and `GetNextQuerySessionPage` frames), then route each `DMAEvent` by `msg.Data.ClientSubscriptionID`. Don't close the socket when one query finishes.
+Run **independent** queries concurrently over the single shared WebSocket: open every session up front by issuing their `OpenQuerySessionAsync` calls without awaiting one before starting the next. Keep the one WebSocket and one `queueID`; give each in-flight query a **distinct fixed inner `clientSubscriptionID`** (reused in its `OpenQuerySessionAsync` body and `GetNextQuerySessionPage` frames), then route each `DMAEvent` by `msg.Data.ClientSubscriptionID`. Give each logical query its own meaningful `QueryTag`. Completed non-live sessions close automatically. Close unfinished or live sessions individually; keep the shared WebSocket open for other queries.
 
 **Exception:** chain sequentially only when a query needs another's result (e.g. B filters on IDs from A); keep the rest parallel. See `references/realtime-updates.md` ("The subscription-id channel") for the routing details.
+
+---
+
+## Closing query sessions and cleanup
+
+Assign cleanup to the function or component that owns each opened GQI session. Call `CloseQuerySession` for unfinished queries or live subscriptions when the consumer stops needing them. Keep previously fetched rows displayed after closure.
+
+| Situation | Required behavior |
+|-----------|-------------------|
+| `IsLast: true`, updates disabled | The Web API closes the session automatically. |
+| `IsLast: true`, updates enabled | Keep the session open while the consumer needs live updates. |
+| Lazy loading paused, more pages still needed | Keep the session open for subsequent page requests. |
+| Manual/automatic refresh, filters change, or query replacement | Close the active unfinished or live session before opening its replacement. |
+| Consumer unmounts, navigates away, or cancels | Close its unfinished or live session. |
+| Error after opening or connection replacement | Close any still-open session before retrying; report cleanup failures. |
+| Opening completes after cancellation or replacement | Close the returned session immediately. |
+
+Use the same authenticated connection that opened the session:
+
+```text
+POST /API/v1/Internal.asmx/CloseQuerySession
+```
+
+```json
+{
+  "connection": "<connection-string>",
+  "sessionID": "<session-guid>"
+}
+```
+
+Implement cleanup once and await it before replacing the query.
+
+Verify automatic final-page closure, refresh during paging, live unsubscribe, query errors, cancellation during opening, and repeated refreshes. Verify that other queries on the shared WebSocket keep working after one session closes.
