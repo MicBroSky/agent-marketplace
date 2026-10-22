@@ -4,14 +4,15 @@ description: 'QAction (C#) development for DataMiner connectors: writing QAction
 argument-hint: 'Describe the QAction task: e.g. "parse JSON response into table", "write QAction for SNMP trap processing"'
 license: LicenseRef-Skyline-Agent-Marketplace
 metadata:
-  updated: 2026-10-16
-  version: 2.4
+  updated: 2026-10-22
+  version: 2.5
 ---
 
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.5 | 2026-10-22 | Documented exact `QAction_Helper` `Parameter` all-lowercase constant rules, `<Type>dummy</Type>` exclusion from `Parameter`, and mandatory real helper generation before lookup. |
 | 2.4 | 2026-10-16 | Enforced strict .NET Framework 4.8 (`net48`) and C# 7.3 rules (forbidding C# 8/9+ syntax and `<LangVersion>` overrides) and added the hard zero-error compilation gate before returning code or opening a PR. |
 | 2.3 | 2026-10-07 | Updated paired agent reference to dataminer-connector-qaction-writer. |
 | 2.2 | 2026-09-27 | Aligned packaged resource references and execution contracts. |
@@ -681,13 +682,16 @@ Do not add a helper project to an intentionally helper-free solution merely beca
 
 ### What gets generated
 
-- **`Parameter` static class** — `public const int` fields for standalone read parameters, all lowercase (e.g. `Parameter.deviceid`). The `name_pid` suffixed variants (e.g. `Parameter.deviceid_100`) are marked `[EditorBrowsable(Never)]` — use the un-suffixed form.
-  - Write parameter constants are in nested `Parameter.Write.xxx`.
-  - Table nested class `Parameter.{Tablename}` with `tablePid`, `indexColumn`, `indexColumnPid`, and sub-classes `Pid` (column PIDs) and `Idx` (column indices)
-- **`SLProtocolExt : SLProtocol` interface** — connector-specific scalar properties (including generated read/dummy accessors), a `Write` property for write accessors, and a `{tablename}` property of type `{Tablename}QActionTable` for each table
-- **`ConcreteSLProtocolExt`** — generated implementation primarily useful with typed unit-test mocks
-- **`{Tablename}QActionTable`** — implements `IEnumerable<{Tablename}QActionRow>`, directly enumerable with `foreach`
-- **`{Tablename}QActionRow`** — typed `System.Object` properties per column; implicit conversion to/from `object[]`
+`Skyline.DataMiner.Files.QActionHelper` (`QActionHelper.dll`) splits parameter `<Name>` values **only on spaces, hyphens (`-`), and dots (`.`)** — never on camelCase boundaries. Because connector XML `<Param><Name>` values are single camelCase words without spaces (e.g. `<Name>apiKey</Name>`, `<Name>statusCodeCurrentWeather</Name>`), the entire name is treated as a single word:
+
+- **`Parameter` static class** — `public const int` fields for standalone `read` parameters, **100% lowercase** (e.g. `<Name>apiKey</Name>` → `Parameter.apikey`, `<Name>deviceId</Name>` → `Parameter.deviceid`). The `name_pid` suffixed variants (e.g. `Parameter.deviceid_100`) are marked `[EditorBrowsable(Never)]` — use the un-suffixed form unless disambiguating duplicates.
+  - **Write parameter constants** are in nested `Parameter.Write.<name>` and are also **100% lowercase** (e.g. `Parameter.Write.apikey`, `Parameter.Write.pollingstate`). **NEVER** use PascalCase (`Parameter.Apikey`, `Parameter.Write.Apikey`) or camelCase (`Parameter.apiKey`).
+  - **`<Type>dummy</Type>` parameters (such as `afterStartup`) are NEVER emitted in `public static class Parameter`**. `QActionHelper.dll` only emits `read`, `write`, and `array` parameters into `Parameter` (dummy parameters only appear as `Afterstartup_dummy` on `SLProtocolExt`). When matching a dummy trigger parameter in `switch (triggerId)`, declare a descriptive local constant (e.g. `const int AfterStartupPid = 1;`) — never reference `Parameter.Afterstartup` or `Parameter.afterstartup`.
+  - **Table nested class `Parameter.{Tablename}`** — first letter uppercase, **all remaining letters lowercase** (e.g. `<Name>channelsTable</Name>` → `Parameter.Channelstable`), with fixed camelCase fields `tablePid` (never `TablePid`), `indexColumn`, `indexColumnPid`, and sub-classes `Pid` (column PIDs, **all lowercase**) and `Idx` (column indices, **all lowercase**).
+- **`SLProtocolExt : SLProtocol` interface** — connector-specific scalar properties with **first letter uppercase, all remaining letters lowercase** (e.g. `protocol.Apikey`, `protocol.Afterstartup_dummy`), a `Write` property for write accessors (`protocol.Write.Apikey`), and an **all-lowercase** `{tablename}` property of type `{Tablename}QActionTable` for each table.
+- **`ConcreteSLProtocolExt`** — generated implementation primarily useful with typed unit-test mocks.
+- **`{Tablename}QActionTable`** — implements `IEnumerable<{Tablename}QActionRow>`, directly enumerable with `foreach`.
+- **`{Tablename}QActionRow`** — typed `System.Object` properties per column (first letter uppercase, rest lowercase); implicit conversion to/from `object[]`.
 
 These generated members are documented by [`Parameter`](https://aka.dataminer.services/skyline-data-miner-scripting-parameter), [`SLProtocolExt`](https://aka.dataminer.services/skyline-data-miner-scripting-sl-protocol-ext), [`QActionTable`](https://aka.dataminer.services/skyline-data-miner-scripting-q-action-table), and [`QActionTableRow`](https://aka.dataminer.services/skyline-data-miner-scripting-q-action-table-row).
 

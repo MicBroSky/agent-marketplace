@@ -10,13 +10,13 @@ Reference for implementation plan formats (FEATURE, BUGFIX, INVESTIGATION, REVIE
 
 These decisions apply to every connector plan:
 
-1. **Target compatibility is task-specific.** Record the target minimum DataMiner version, any maximum supported version, and the compatible connector Dev Pack, template, validator, and schema sources. Derive values from an existing solution when possible. If a required target cannot be inferred, ask the user instead of selecting the latest version.
+1. **Target compatibility is task-specific.** Record the target minimum DataMiner version, any maximum supported version, and the compatible connector Dev Pack, template, validator, and schema sources. Derive values from an existing solution when possible. For a new connector or when omitted, resolve the minimum DataMiner version dynamically from the official Skyline Software Support Lifecycles documentation (`https://docs.dataminer.services/dataminer/Reference/Software_support_life_cycles.html`) by selecting the oldest Main Release version whose support period is currently active relative to the current date; do not prompt the user or default to the latest version. Propose the resolved version in the plan for approval.
 2. **Connector identity defaults when omitted.** IntegrationID, VendorOID, and DeviceOID are not strict requirements. If the user provides them, use the supplied values (and validate VendorOID against the target schema). If the user does not provide them, use the standard defaults:
    - `<IntegrationID>DMS-DRV-XXXX</IntegrationID>`
    - `<VendorOID>1.3.6.1.4.1.8813.2.XX</VendorOID>`
    - `<DeviceOID>XX</DeviceOID>`
    For an existing connector, preserve the values in `protocol.xml` unless the user explicitly changes them.
-3. **QAction helper generation is conditional.** Do not introduce or require a generated QAction helper as a universal completion gate. If the existing solution already consumes generated helper members and an XML change affects them, refresh the helper when the approved tool is available; otherwise skip helper generation.
+3. **QAction helper generation is conditional.** Do not introduce or require a generated QAction helper as a universal completion gate. If the existing or planned solution consumes generated helper members (including NEW connectors whose QActions will reference `Parameter.*` or `SLProtocolExt`) and an XML change affects them, generate/refresh the helper via `dataminer-qaction-helper-generator` (`qaction-helper-generation` or the official `Skyline.DataMiner.Files.QActionHelper` fallback); never manually hand-synthesize `QAction_Helper.cs`. Otherwise skip helper generation.
 4. **Simulation routing is unchanged.** When simulation is explicitly requested, retain the existing TOON simulation route and contract. This plan does not broaden, replace, or automatically invoke it.
 5. **Artifact ownership is explicit.** Assign XML to `dataminer-connector-xml-author`, or explicitly select initial inline ownership before any worker starts. QAction C# and projects belong to `dataminer-connector-qaction-writer`, tests to `dataminer-connector-test-writer`. QAction/trigger/action XML registrations remain with the XML owner, never the C# writer. A late XML request pauses C# work until the XML, conditional-helper, and affected build/validator gates run again.
 6. **Sequencing is orchestrator-owned.** Specialists return results and do not start sideways handoffs. Each gate has at most three attempts; after the third failure the plan stops with a blocker and evidence.
@@ -55,7 +55,7 @@ Build this map by reading `protocol.xml` completely before proposing any changes
   - Last Release Date: [from latest <MinorVersion><Date>, YYYY-MM-DD]
 - **Connection Type**: [from <Type>]
 - **Compatibility**:
-  - Minimum DataMiner version: [from Compliancies/MinimumRequiredVersion or user]
+  - Minimum DataMiner version: [from Compliancies/MinimumRequiredVersion or lifecycle docs (oldest supported Main Release) or user]
   - Maximum supported version: [from Compliancies/MaximumSupportedVersion, or none]
   - Dev Pack / template / validator versions: [from project files and target-version resolution]
   - Schema source/version: [from the protocol XML source manifest selected for this task]
@@ -113,7 +113,7 @@ Build this map by reading `protocol.xml` completely before proposing any changes
 ### Target Compatibility
 | Axis | Selected value | Evidence / source |
 |------|----------------|-------------------|
-| Minimum DataMiner version | [value] | [existing XML or user requirement] |
+| Minimum DataMiner version | [value] | [existing XML | lifecycle docs (oldest active Main Release) | user requirement] |
 | Maximum supported version | [value or none] | [existing XML or user requirement] |
 | QAction target & language | `.NET Framework 4.8` (`net48`) / `C# 7.3` | Mandatory DataMiner SLScripting & Validator contract |
 | Protocol schema | [package/version/revision] | [source manifest] |
@@ -217,7 +217,7 @@ For SNMP connectors, include the `SNMP Table OID` column. For non-SNMP connector
 
 ### Execution Order
 1. XML changes (load `dataminer-xml-authoring`)
-2. If the existing solution consumes generated QAction helper members and the XML change affects them, refresh the helper with the approved tool when available; otherwise record "not required"
+2. If the existing or planned solution consumes generated QAction helper members and the XML change affects them, generate/refresh the helper via `dataminer-qaction-helper-generator` (never hand-synthesize `QAction_Helper.cs`); otherwise record "not required"
 3. QAction C# code (load `dataminer-qaction`)
 4. Unit tests (load `dataminer-unit-testing`)
 5. Validate (load `dataminer-validation`)

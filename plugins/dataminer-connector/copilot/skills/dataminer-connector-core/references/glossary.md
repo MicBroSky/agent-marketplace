@@ -237,7 +237,7 @@ These ID namespaces are independent of each other and of parameter IDs. You can 
 Must be `true` in `<Compliancies>` for all modern connectors. Indicates the connector does not use features incompatible with Cassandra-based DataMiner systems.
 
 **MinimumRequiredVersion**
-The oldest DataMiner version that supports all features used by the connector. Format: `Major.Minor.CU.Build - InternalBuild`.
+The oldest DataMiner version that supports all features used by the connector. Format: `Major.Minor.CU.Build - InternalBuild`. When creating new connectors without an explicit requirement, dynamically resolved to the oldest active DataMiner Main Release from the official Software Support Lifecycles documentation (`https://docs.dataminer.services/dataminer/Reference/Software_support_life_cycles.html`).
 
 **Connector Version**
 Uses `Branch.System.Major.Minor` format (e.g., `1.0.0.1`). The Branch is almost always `1`. System is `0` unless the connector requires a specific DMA system version. Initial version is `1.0.0.1`.

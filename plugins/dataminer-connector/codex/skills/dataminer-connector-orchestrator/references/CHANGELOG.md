@@ -1,9 +1,11 @@
-# dataminer-connector-orchestrator — Archived Changelog (v1.1–v3.15)
+# dataminer-connector-orchestrator — Archived Changelog (v1.1–v3.17)
 
-Versions v3.16 and later are in `agents/dataminer-connector-orchestrator.agent.md`.
+Versions v3.18 and later are in `agents/dataminer-connector-orchestrator.agent.md`.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.17 | 2026-10-21 | Target minimum DataMiner version is optional during intake for new connectors; dynamically resolved from official Software Support Lifecycles docs. |
+| 3.16 | 2026-10-20 | Streamlined upfront skill loading by deferring low-level syntax and reference manuals to specialist subagents while retaining architectural and planning knowledge; kept artifact edits behind assigned specialists. |
 | 3.15 | 2026-10-16 | Enforced .NET Framework 4.8 (`net48`) and C# 7.3 for connector QActions and added a hard compilation gate forbidding non-compiling code from being returned to the user or committed/pushed to a PR. |
 | 3.14 | 2026-10-12 | Added version bumping and VersionHistory synchronization rules to FEATURE, BUGFIX, and NEW connector plans, task routes, and validation gates. |
 | 3.13 | 2026-10-07 | Made IntegrationID, VendorOID, and DeviceOID optional; default to DMS-DRV-XXXX, 1.3.6.1.4.1.8813.2.XX, and XX when omitted. |

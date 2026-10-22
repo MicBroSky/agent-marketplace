@@ -4,14 +4,16 @@ description: 'Orchestrator reference material for DataMiner connector developmen
 argument-hint: 'Describe the connector task: e.g. "create SNMP connector for Vendor X", "add HTTP polling group to existing connector", "fix validator error 2.5.1", "investigate why table is not populating", "review my connector", "generate help documentation"'
 license: LicenseRef-Skyline-Agent-Marketplace
 metadata:
-  updated: 2026-10-16
-  version: 2.12
+  updated: 2026-10-22
+  version: 2.14
 ---
 
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.14 | 2026-10-22 | Clarified that conditional `QAction_Helper.cs` generation applies to both existing and planned QAction consumers (including NEW connectors with empty scaffold stubs) and forbade manual helper synthesis. |
+| 2.13 | 2026-10-21 | Added dynamic minimum DataMiner version retrieval from official Software Support Lifecycles docs to avoid prompting users for omitted target versions. |
 | 2.12 | 2026-10-16 | Enforced .NET Framework 4.8 (`net48`) and C# 7.3 for connector QActions and added the hard compilation gate forbidding non-compiling code from being returned to the user or committed/pushed to a PR. |
 | 2.11 | 2026-10-12 | Added version bumping and VersionHistory synchronization guidance across plan templates, task routes, and validation gates. |
 | 2.10 | 2026-10-07 | Relaxed requirement for IntegrationID, VendorOID, and DeviceOID; default to DMS-DRV-XXXX, 1.3.6.1.4.1.8813.2.XX, and XX when omitted. |
@@ -111,6 +113,6 @@ REVIEW/INVESTIGATION bypass implementation repair gates and apply
 - **For DataMiner connector QActions, ALWAYS target `.NET Framework 4.8` (`net48`) and `C# 7.3`.** Never use C# 8.0/9.0+ syntax or bump `<LangVersion>` above `7.3`.
 - **Hard compilation gate: ONLY fully compiling code (`dotnet build` with 0 errors) may ever be returned to the user or committed/pushed to a PR.**
 - **ALWAYS validate** after implementation. Do not consider a task complete without validation.
-- **XML changes before QAction changes.** Always. Refresh `QAction_Helper` only when existing code consumes generated members affected by the XML change, or when the user explicitly requests it. Preserve helper-free solutions.
+- **XML changes before QAction changes.** Always. Refresh `QAction_Helper` only when existing or planned code consumes generated members affected by the XML change (including NEW connectors whose QActions will reference `Parameter.*`), or when the user explicitly requests it; never manually synthesize `QAction_Helper.cs`. Preserve helper-free solutions.
 - **Investigation tasks are read-only** until the user approves a fix.
 - For XML topics not covered by loaded specialist skills (DCF, mediation, EPM, matrix, tree controls), load `dataminer-protocol-xml-reference` and the relevant bundled references. If the needed schema detail is not documented there, stop and request a reference expansion instead of reading raw `.xsd` files or guessing.

@@ -85,7 +85,7 @@ public class QAction
             });
         }
 
-        protocol.FillArray(Parameter.Devices.TablePid, tableRows, NotifyProtocol.SaveOption.Full);
+        protocol.FillArray(Parameter.Devices.tablePid, tableRows, NotifyProtocol.SaveOption.Full);
     }
 
     private static double ConvertStatus(string status)
@@ -220,7 +220,7 @@ public class QAction
             // ✅ Updates only the DevicesStatus column — does not touch DevicesName or other columns
             protocol.FillArrayWithColumn(
                 Parameter.Devices.tablePid,
-                Parameter.Devices.Pid.devicesStatus_1003,
+                Parameter.Devices.Pid.devicesstatus_1003,
                 keys,
                 statuses);
         }
@@ -345,7 +345,7 @@ public static class Helpers
 
 | ❌ Wrong | ✅ Correct | Reason |
 |----------|-----------|--------|
-| `protocol.GetParameter(1003)` (hardcoded ID) | `protocol.GetParameter(Parameter.devicesStatus_1003)` | Magic numbers trigger validator warning 3.6.2 |
+| `protocol.GetParameter(1003)` (hardcoded ID) | `protocol.GetParameter(Parameter.devicesstatus_1003)` (or `Parameter.devicesstatus`) | Magic numbers trigger validator warning 3.6.2 |
 | `protocol.GetParameter()` in a loop | `protocol.GetParameters(ids[])` once | Each call is IPC; loops cause RTEs |
 | `protocol.SetParameter()` in a loop | `protocol.SetParameters(ids[], values[])` once | Same IPC cost problem |
 | `catch (Exception ex) { ... ex.Message ... }` | `... ex.ToString() ...` | `ex.Message` loses stack trace |

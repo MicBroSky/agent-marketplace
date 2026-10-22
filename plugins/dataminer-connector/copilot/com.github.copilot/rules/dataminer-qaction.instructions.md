@@ -1,8 +1,8 @@
 ---
 description: "Guard rails for DataMiner connector QAction C# code. Enforces .NET Framework 4.8 (net48), C# 7.3, zero-error compilation, and prevents hallucinated SLProtocol methods, namespace errors, and common C# anti-patterns."
 applyTo: "**/QAction_*.cs"
-version: "1.6"
-updated: "2026-10-16"
+version: "1.7"
+updated: "2026-10-22"
 ---
 
 # DataMiner QAction C# — Guard Rails
@@ -47,16 +47,25 @@ updated: "2026-10-16"
 - **NEVER call `protocol.GetParameter()` or `protocol.SetParameter()` in a loop.** Each call is inter-process communication (IPC). Use `protocol.GetParameters(uint[] ids)` and `protocol.SetParameters(int[] ids, object[] values)` for bulk operations.
 - **NEVER scatter parameter IDs as magic numbers.** When the project references a current `QAction_Helper`, use its `Parameter.xxx` constants. In an intentionally helper-free project, declare descriptive local constants once and use those.
   ```csharp
-  // ❌ WRONG
+  // ❌ WRONG — magic number
   protocol.GetParameter(1003);
 
-  // ✅ CORRECT with generated helper
+  // ❌ WRONG — PascalCase or camelCase on Parameter constants (causes CS0117 once DIS generates QAction_Helper.cs)
+  protocol.GetParameter(Parameter.DevicesStatus);
   protocol.GetParameter(Parameter.devicesStatus);
 
-  // ✅ CORRECT without generated helper
+  // ✅ CORRECT with generated helper (Parameter and Parameter.Write constants are ALL LOWERCASE)
+  protocol.GetParameter(Parameter.devicesstatus);
+  protocol.GetParameter(Parameter.Write.devicesstatus);
+
+  // ✅ CORRECT without generated helper (or for <Type>dummy</Type> trigger IDs, which are never in Parameter)
   const int DevicesStatusPid = 1003;
   protocol.GetParameter(DevicesStatusPid);
   ```
+- **NEVER manually write or hand-synthesize `QAction_Helper/QAction_Helper.cs`.** Always generate it from `protocol.xml` using `dataminer-qaction-helper-generator` (`qaction-helper-generation` or `Skyline.DataMiner.Files.QActionHelper`) and read the actual generated `QAction_Helper.cs` before referencing `Parameter.*` constants. Note:
+  - Standalone read/write constants in `Parameter.<name>` and `Parameter.Write.<name>` are **100% lowercase** (e.g. `<Name>apiKey</Name>` → `Parameter.apikey`, `Parameter.Write.apikey`).
+  - Table class names in `Parameter.<Tablename>` have **only the first letter capitalized and the rest lowercase** (e.g. `<Name>channelsTable</Name>` → `Parameter.Channelstable`), its fixed table PID field is `tablePid` (camelCase `t`, never `TablePid`), and `Pid`/`Idx` column constants are **100% lowercase** (`Parameter.Channelstable.Pid.channelname`).
+  - `<Type>dummy</Type>` parameters (such as `afterStartup`) are **never** emitted into `public static class Parameter` — declare a descriptive `const int` for dummy trigger IDs instead of `Parameter.Afterstartup` or `Parameter.afterstartup`.
 - **`FillArray`, `FillArrayNoDelete`, `FillArrayWithColumn`, `SetRow`, `AddRow`, and `DeleteRow` are built-in `SLProtocol` members.** Call them directly; no `SLProtocolExt` cast or generated helper is required:
   ```csharp
   protocol.FillArray(DevicesTablePid, tableRows, NotifyProtocol.SaveOption.Full);
