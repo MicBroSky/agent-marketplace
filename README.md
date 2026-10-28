@@ -44,7 +44,7 @@ The marketplace registration name is `skyline-agent-marketplace`. Installable pl
 | VS Code with GitHub Copilot | [Agent plugins](https://code.visualstudio.com/learn/agents/3-agent-plugins) |
 | Claude Code | [Discover and install plugins](https://code.claude.com/docs/en/discover-plugins) |
 | Cursor | [Customize Cursor](https://cursor.com/docs/customize-cursor) and [plugins reference](https://cursor.com/docs/reference/plugins) |
-| OpenAI Codex | [Package and manage plugins](https://developers.openai.com/plugins/build/plugins) |
+| OpenAI Codex | [Importing and Syncing Marketplaces from GitHub](https://help.openai.com/en/articles/20001504-importing-and-syncing-plugin-marketplaces-from-github) |
 
 ## Find installed plugins in Windows Explorer
 
